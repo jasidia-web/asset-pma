@@ -72,6 +72,7 @@
   .rail-head{
     padding:22px 20px 16px;
     border-bottom:1px solid rgba(231,233,225,0.1);
+    position:relative;
   }
   .rail-logo{
     width:44px; height:44px;
@@ -80,6 +81,16 @@
     margin-bottom:12px;
     box-shadow:0 2px 8px rgba(0,0,0,0.35);
   }
+  .rail-close-btn{
+    display:none;
+    position:absolute; top:14px; right:14px;
+    width:30px; height:30px; border-radius:6px;
+    border:1px solid rgba(231,233,225,0.22);
+    background:transparent; color:var(--rail-ink-soft);
+    align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .rail-close-btn:hover{ color:var(--rail-ink); background:rgba(231,233,225,0.08); }
   .rail-tag{
     display:inline-flex;
     align-items:center;
@@ -492,9 +503,54 @@
   .rail-list::-webkit-scrollbar-thumb{ background:rgba(231,233,225,0.18); }
 
   @media (max-width: 760px){
-    .app{ grid-template-columns: 1fr; grid-template-rows:auto 1fr; height:auto; min-height:100vh; }
-    .rail{ max-height:230px; }
-    .content{ padding:16px; }
+    .app{ grid-template-columns: 1fr; grid-template-rows:56px 1fr; height:100vh; min-height:100vh; overflow:hidden; }
+    .rail{
+      position:fixed; top:0; left:0; bottom:0;
+      width:82vw; max-width:300px; max-height:none;
+      transform:translateX(-100%);
+      transition:transform .22s ease;
+      z-index:40;
+      box-shadow:4px 0 28px rgba(0,0,0,0.4);
+    }
+    .app.nav-open .rail{ transform:translateX(0); }
+    .main{ height:100%; overflow:hidden; display:flex; flex-direction:column; }
+    .content{ padding:16px; flex:1; overflow:auto; }
+  }
+
+  .mobile-topbar{ display:none; }
+  .rail-backdrop{ display:none; }
+
+  @media (max-width: 760px){
+    .mobile-topbar{
+      display:flex; align-items:center; gap:10px;
+      padding:0 14px; height:56px; flex:none;
+      background:var(--rail-bg); color:var(--rail-ink);
+      border-bottom:1px solid rgba(231,233,225,0.12);
+      position:relative; z-index:20;
+    }
+    .mobile-menu-btn{
+      width:34px; height:34px; border-radius:6px;
+      border:1px solid rgba(231,233,225,0.22);
+      background:transparent; color:var(--rail-ink);
+      display:flex; align-items:center; justify-content:center;
+      flex:none; cursor:pointer;
+    }
+    .mobile-menu-btn:hover{ background:rgba(231,233,225,0.08); }
+    .mobile-topbar-logo{ width:24px; height:24px; border-radius:6px; flex:none; }
+    .mobile-topbar-title{
+      font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14.5px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .rail-backdrop{
+      display:block;
+      position:fixed; inset:0;
+      background:rgba(10,14,11,0.5);
+      opacity:0; pointer-events:none;
+      transition:opacity .22s ease;
+      z-index:30;
+    }
+    .app.nav-open .rail-backdrop{ opacity:1; pointer-events:auto; }
+    .rail-close-btn{ display:flex; }
   }
 
   /* ---------- LOGIN ---------- */
@@ -653,6 +709,7 @@ var state = {
   dirty: false,
   lastSaved: null,
   loaded: false,
+  mobileNavOpen: false,
   authUser: DEFAULT_USER,
   authHash: null
 };
@@ -954,6 +1011,12 @@ function render(){
   }
   root.innerHTML =
     '<div class="app">' +
+      '<div class="mobile-topbar">' +
+        '<button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">' + icon('menu') + '</button>' +
+        '<img class="mobile-topbar-logo" src="' + LOGO_URI + '" alt="">' +
+        '<span class="mobile-topbar-title" id="mobileTopbarTitle">Sistem Asset PMA</span>' +
+      '</div>' +
+      '<div class="rail-backdrop" id="railBackdrop"></div>' +
       renderRail() +
       '<div class="main">' +
         '<div id="topbar"></div>' +
@@ -963,6 +1026,24 @@ function render(){
   renderTopbar();
   renderContent();
   bindGlobalEvents();
+  bindMobileNavEvents();
+}
+
+function openMobileNav(){
+  state.mobileNavOpen = true;
+  var appEl = document.querySelector('.app');
+  if(appEl) appEl.classList.add('nav-open');
+}
+function closeMobileNav(){
+  state.mobileNavOpen = false;
+  var appEl = document.querySelector('.app');
+  if(appEl) appEl.classList.remove('nav-open');
+}
+function bindMobileNavEvents(){
+  var btn = document.getElementById('mobileMenuBtn');
+  if(btn) btn.addEventListener('click', openMobileNav);
+  var backdrop = document.getElementById('railBackdrop');
+  if(backdrop) backdrop.addEventListener('click', closeMobileNav);
 }
 
 function categoryCount(cat){ return state.data[cat].rows.length; }
@@ -987,6 +1068,7 @@ function renderRail(){
 
   return '<div class="rail">' +
     '<div class="rail-head">' +
+      '<button class="rail-close-btn" id="railCloseBtn" aria-label="Tutup menu">' + icon('x') + '</button>' +
       '<img class="rail-logo" src="' + LOGO_URI + '" alt="Logo PMA Asset">' +
       '<span class="rail-tag">IT · INVENTORY</span>' +
       '<h1 class="rail-title">Sistem Asset PMA</h1>' +
@@ -1049,6 +1131,9 @@ function renderTopbar(){
   var title = isOverview ? 'Ringkasan Aset' : state.current;
   var eyebrow = isOverview ? 'DASHBOARD' : ('KATEGORI · ' + categoryCount(state.current) + ' ITEM');
 
+  var mtt = document.getElementById('mobileTopbarTitle');
+  if(mtt) mtt.textContent = isOverview ? 'Sistem Asset PMA' : state.current;
+
   var actions = '';
   if(!isOverview){
     actions =
@@ -1091,7 +1176,8 @@ function icon(name){
     x: '<path d="M18 6L6 18M6 6l12 12"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
-    github: '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.1-.5 2V21"/>'
+    github: '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.1-.5 2V21"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>'
   };
   return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name]||'') + '</svg>';
 }
@@ -1405,17 +1491,20 @@ function bindRailEvents(){
       if(state.editingKey || state.addingNew){ cancelEditSilently(); }
       state.current = cat;
       state.search = '';
+      closeMobileNav();
       renderAll();
     });
   });
   var addCat = document.getElementById('railAddCat');
-  if(addCat) addCat.addEventListener('click', openNewCategoryModal);
+  if(addCat) addCat.addEventListener('click', function(){ closeMobileNav(); openNewCategoryModal(); });
   var btnAccount = document.getElementById('btnAccount');
-  if(btnAccount) btnAccount.addEventListener('click', openAccountModal);
+  if(btnAccount) btnAccount.addEventListener('click', function(){ closeMobileNav(); openAccountModal(); });
   var btnLogout = document.getElementById('btnLogout');
-  if(btnLogout) btnLogout.addEventListener('click', logout);
+  if(btnLogout) btnLogout.addEventListener('click', function(){ closeMobileNav(); logout(); });
   var railGithub = document.getElementById('railGithub');
-  if(railGithub) railGithub.addEventListener('click', openGithubModal);
+  if(railGithub) railGithub.addEventListener('click', function(){ closeMobileNav(); openGithubModal(); });
+  var railCloseBtn = document.getElementById('railCloseBtn');
+  if(railCloseBtn) railCloseBtn.addEventListener('click', closeMobileNav);
 }
 
 function cancelEditSilently(){
