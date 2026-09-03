@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sistem Asset PMA — by Adi Nugraha</title>
+<meta name="theme-color" content="#172019">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Asset PMA">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" id="faviconLink" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg: #EEF0EA;
+    --surface: #FFFFFF;
+    --surface-2: #F7F8F3;
+    --ink: #1B2320;
+    --ink-soft: #565F58;
+    --line: #DEE1D6;
+    --line-strong: #C7CBBC;
+    --rail-bg: #172019;
+    --rail-bg-2: #1E2A22;
+    --rail-ink: #E7E9E1;
+    --rail-ink-soft: #93A092;
+    --amber: #E0912E;
+    --amber-ink: #4A2E05;
+    --teal: #3D6B5C;
+    --rust: #B23A2E;
+    --focus: #2F6F5C;
+    --radius-sm: 4px;
+    --radius-md: 7px;
+    --shadow-1: 0 1px 2px rgba(23,32,25,0.06), 0 1px 1px rgba(23,32,25,0.04);
+    --shadow-2: 0 8px 24px rgba(23,32,25,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    font-size:14px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+  .display{ font-family:'Space Grotesk', system-ui, sans-serif; }
+  button, input, select, textarea{ font-family:inherit; font-size:inherit; }
+  :focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  .app{
+    display:grid;
+    grid-template-columns: 250px 1fr;
+    height:100vh;
+    min-height:560px;
+  }
+
+  /* ---------- RAIL / SIDEBAR ---------- */
+  .rail{
+    background: linear-gradient(180deg, var(--rail-bg) 0%, var(--rail-bg-2) 100%);
+    color: var(--rail-ink);
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    overflow:hidden;
+  }
+  .rail-head{
+    padding:22px 20px 16px;
+    border-bottom:1px solid rgba(231,233,225,0.1);
+  }
+  .rail-logo{
+    width:44px; height:44px;
+    border-radius:10px;
+    display:block;
+    margin-bottom:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.35);
+  }
+  .rail-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.06em;
+    color:var(--amber);
+    background:rgba(224,145,46,0.14);
+    border:1px solid rgba(224,145,46,0.35);
+    padding:3px 8px;
+    border-radius:3px;
+    margin-bottom:10px;
+  }
+  .rail-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:20px;
+    line-height:1.15;
+    margin:0 0 3px;
+  }
+  .rail-sub{
+    font-size:11.5px;
+    color:var(--rail-ink-soft);
+    margin:0;
+  }
+  .rail-list{
+    flex:1;
+    overflow-y:auto;
+    padding:12px 10px 12px;
+  }
+  .rail-group-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.08em;
+    color:var(--rail-ink-soft);
+    padding:10px 10px 6px;
+  }
+  .rail-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:8px 10px;
+    border-radius:5px;
+    cursor:pointer;
+    color:var(--rail-ink-soft);
+    border:1px solid transparent;
+    margin-bottom:2px;
+    transition: background .12s ease, color .12s ease;
+    user-select:none;
+  }
+  .rail-item:hover{
+    background:rgba(231,233,225,0.06);
+    color:var(--rail-ink);
+  }
+  .rail-item.active{
+    background:rgba(224,145,46,0.13);
+    border-color:rgba(224,145,46,0.4);
+    color:#F5DBAE;
+  }
+  .rail-item .ri-name{
+    font-size:13px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .rail-item .ri-count{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:inherit;
+    opacity:0.75;
+    flex:none;
+  }
+  .rail-item.overview .ri-name{ font-weight:600; }
+  .rail-add{
+    display:flex; align-items:center; gap:7px;
+    padding:8px 10px;
+    margin-top:6px;
+    border-radius:5px;
+    cursor:pointer;
+    color:var(--rail-ink-soft);
+    font-size:12.5px;
+    border:1px dashed rgba(231,233,225,0.22);
+  }
+  .rail-add:hover{ color:var(--rail-ink); border-color:rgba(231,233,225,0.4); }
+  .rail-foot{
+    padding:14px 20px 18px;
+    border-top:1px solid rgba(231,233,225,0.1);
+    font-size:11px;
+    color:var(--rail-ink-soft);
+  }
+  .rail-foot b{ color:var(--rail-ink); font-family:'IBM Plex Mono',monospace; }
+
+  /* ---------- MAIN ---------- */
+  .main{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    height:100vh;
+  }
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px 24px;
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+    flex-wrap:wrap;
+  }
+  .topbar-title-wrap{ flex:1; min-width:220px; }
+  .topbar-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    letter-spacing:0.04em;
+    margin:0 0 2px;
+  }
+  .topbar-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:21px;
+    margin:0;
+  }
+  .search-wrap{
+    position:relative;
+    width:250px;
+  }
+  .search-wrap input{
+    width:100%;
+    padding:8px 12px 8px 30px;
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-sm);
+    background:var(--surface-2);
+    color:var(--ink);
+  }
+  .search-wrap input:focus{ background:var(--surface); }
+  .search-wrap svg{
+    position:absolute; left:9px; top:50%; transform:translateY(-50%);
+    color:var(--ink-soft);
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 13px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--line-strong);
+    background:var(--surface);
+    color:var(--ink);
+    cursor:pointer;
+    font-weight:500;
+    font-size:13px;
+    white-space:nowrap;
+    transition: background .12s ease, border-color .12s ease, transform .06s ease;
+  }
+  .btn:hover{ background:var(--surface-2); border-color:var(--ink-soft); }
+  .btn:active{ transform:translateY(1px); }
+  .btn svg{ flex:none; }
+  .btn-primary{
+    background:var(--amber);
+    border-color:var(--amber);
+    color:var(--amber-ink);
+    font-weight:600;
+  }
+  .btn-primary:hover{ background:#cc8228; border-color:#cc8228; }
+  .btn-primary:disabled{
+    opacity:0.45; cursor:default; transform:none;
+  }
+  .btn-ghost{ border-color:transparent; background:transparent; }
+  .btn-ghost:hover{ background:var(--surface-2); }
+  .btn-danger-text{ color:var(--rust); }
+  .btn-sm{ padding:5px 9px; font-size:12px; border-radius:4px; }
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:29px; height:29px;
+    border-radius:5px;
+    border:1px solid var(--line-strong);
+    background:var(--surface);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .icon-btn:hover{ background:var(--surface-2); color:var(--ink); }
+  .icon-btn.danger:hover{ color:var(--rust); border-color:var(--rust); }
+  .icon-btn.confirm:hover{ color:var(--teal); border-color:var(--teal); }
+
+  .unsaved-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--amber);
+    display:inline-block;
+    box-shadow:0 0 0 3px rgba(224,145,46,0.22);
+  }
+  .save-state{
+    display:flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--ink-soft);
+    padding-right:4px;
+  }
+
+  .content{
+    flex:1;
+    overflow:auto;
+    padding:20px 24px 40px;
+  }
+
+  /* ---------- TABLE ---------- */
+  .table-scroll{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    overflow:auto;
+    box-shadow:var(--shadow-1);
+  }
+  table.data-table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:600px;
+  }
+  .data-table thead th{
+    position:sticky; top:0;
+    background:var(--surface-2);
+    text-align:left;
+    padding:10px 12px;
+    font-size:11px;
+    letter-spacing:0.03em;
+    color:var(--ink-soft);
+    font-weight:600;
+    border-bottom:1px solid var(--line-strong);
+    white-space:nowrap;
+    z-index:2;
+  }
+  .data-table thead th.col-actions{ text-align:right; position:sticky; right:0; background:var(--surface-2); z-index:3;}
+  .data-table tbody td{
+    padding:9px 12px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+    max-width:260px;
+  }
+  .data-table tbody tr:hover{ background:rgba(61,107,92,0.045); }
+  .data-table tbody tr.editing{ background:rgba(224,145,46,0.06); }
+  .cell-text{
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:block;
+  }
+  .cell-code{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink); }
+  .cell-input{
+    width:100%;
+    min-width:90px;
+    padding:5px 7px;
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    background:var(--surface);
+    color:var(--ink);
+  }
+  .cell-input:focus{ border-color:var(--focus); }
+  td.col-actions{
+    text-align:right;
+    white-space:nowrap;
+    position:sticky; right:0;
+    background:var(--surface);
+  }
+  .data-table tbody tr:hover td.col-actions{ background:#F6F1E9; }
+  .data-table tbody tr.editing td.col-actions{ background:#FBEFDC; }
+  .row-actions{ display:inline-flex; gap:6px; }
+
+  .status-tag{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:500;
+    border:1px solid transparent;
+    white-space:nowrap;
+  }
+  .status-inuse{ background:rgba(61,107,92,0.12); color:var(--teal); border-color:rgba(61,107,92,0.3);}
+  .status-stock{ background:rgba(224,145,46,0.13); color:#9C6414; border-color:rgba(224,145,46,0.35);}
+  .status-dead{ background:rgba(178,58,46,0.1); color:var(--rust); border-color:rgba(178,58,46,0.3);}
+  .status-plain{ background:var(--surface-2); color:var(--ink-soft); border-color:var(--line);}
+
+  .empty-state{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--ink-soft);
+  }
+  .empty-state svg{ margin-bottom:12px; opacity:0.5; }
+  .empty-state h3{ font-family:'Space Grotesk',sans-serif; color:var(--ink); margin:0 0 6px; }
+  .empty-state p{ margin:0 0 16px; font-size:13px; }
+
+  .result-count{
+    font-size:12px; color:var(--ink-soft); margin:0 0 10px;
+  }
+
+  /* ---------- OVERVIEW ---------- */
+  .ov-hero{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    background:linear-gradient(135deg, var(--rail-bg) 0%, #24352A 100%);
+    color:#EDEFE7;
+    border-radius:var(--radius-md);
+    padding:26px 28px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .ov-hero-num{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:54px; line-height:1; }
+  .ov-hero-label{ font-size:12.5px; color:#B7C0B2; margin-top:6px; }
+  .ov-hero-meta{ font-size:12px; color:#B7C0B2; text-align:right; }
+  .ov-hero-meta .mono{ color:#F5DBAE; }
+  .ov-grid{
+    display:grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap:18px;
+  }
+  @media (max-width: 920px){ .ov-grid{ grid-template-columns:1fr; } }
+  .ov-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:18px 18px 8px;
+    box-shadow:var(--shadow-1);
+  }
+  .ov-card h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:14px; margin:0 0 14px;
+  }
+  .bar-row{
+    display:grid;
+    grid-template-columns: 118px 1fr 34px;
+    align-items:center;
+    gap:10px;
+    padding:6px 0;
+    cursor:pointer;
+    border-radius:4px;
+  }
+  .bar-row:hover{ background:var(--surface-2); }
+  .bar-row .bar-name{
+    font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .bar-track{
+    height:8px; background:var(--surface-2); border-radius:4px; overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .bar-fill{ height:100%; background:linear-gradient(90deg, var(--teal), #5C9683); border-radius:4px; }
+  .bar-count{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); text-align:right; }
+  .stat-line{
+    display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .stat-line:last-child{ border-bottom:none; }
+  .stat-line b{ font-family:'IBM Plex Mono',monospace; font-weight:600; }
+  .tag-pill{
+    display:inline-block; padding:2px 7px; border-radius:3px; font-size:10.5px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft); margin:2px 4px 2px 0;
+  }
+
+  /* ---------- MODAL / TOAST ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(23,32,25,0.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100; padding:20px;
+  }
+  .modal{
+    background:var(--surface);
+    border-radius:var(--radius-md);
+    width:100%; max-width:460px;
+    box-shadow:var(--shadow-2);
+    overflow:hidden;
+  }
+  .modal-head{
+    padding:18px 20px 14px;
+    border-bottom:1px solid var(--line);
+  }
+  .modal-head h3{ font-family:'Space Grotesk',sans-serif; margin:0 0 4px; font-size:16px; }
+  .modal-head p{ margin:0; font-size:12.5px; color:var(--ink-soft); }
+  .modal-body{ padding:18px 20px; }
+  .modal-body label{
+    display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:5px; font-weight:500;
+  }
+  .modal-body input[type=text], .modal-body select, .modal-body textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--line-strong);
+    border-radius:5px; margin-bottom:14px; background:var(--surface);
+  }
+  .modal-body .radio-row{ display:flex; gap:10px; margin-bottom:14px; }
+  .modal-body .radio-opt{
+    flex:1; border:1px solid var(--line-strong); border-radius:6px; padding:10px 12px; cursor:pointer;
+  }
+  .modal-body .radio-opt.selected{ border-color:var(--teal); background:rgba(61,107,92,0.06); }
+  .modal-body .radio-opt div:first-child{ font-weight:600; font-size:12.5px; margin-bottom:2px; }
+  .modal-body .radio-opt div:last-child{ font-size:11px; color:var(--ink-soft); }
+  .modal-foot{
+    padding:14px 20px; border-top:1px solid var(--line);
+    display:flex; justify-content:flex-end; gap:8px;
+  }
+  .toast-wrap{
+    position:fixed; bottom:20px; right:20px; z-index:200;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .toast{
+    background:var(--rail-bg); color:#EDEFE7;
+    padding:11px 16px; border-radius:6px;
+    font-size:12.5px; box-shadow:var(--shadow-2);
+    display:flex; align-items:center; gap:8px;
+    animation: toast-in .18s ease;
+    max-width:320px;
+  }
+  .toast.err{ background:var(--rust); }
+  .toast.ok .dot{ background:#8FC5A9; }
+  .toast .dot{ width:6px; height:6px; border-radius:50%; background:var(--amber); flex:none; }
+  @keyframes toast-in{ from{ opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--line-strong); border-radius:6px; }
+  .rail-list::-webkit-scrollbar-thumb{ background:rgba(231,233,225,0.18); }
+
+  @media (max-width: 760px){
+    .app{ grid-template-columns: 1fr; grid-template-rows:auto 1fr; height:auto; min-height:100vh; }
+    .rail{ max-height:230px; }
+    .content{ padding:16px; }
+  }
+
+  /* ---------- LOGIN ---------- */
+  .login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(224,145,46,0.10), transparent 45%),
+      linear-gradient(160deg, var(--rail-bg) 0%, #202E24 55%, #1A2620 100%);
+    padding:20px;
+  }
+  .login-card{
+    width:100%;
+    max-width:380px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(231,233,225,0.14);
+    border-radius:10px;
+    padding:32px 30px 26px;
+    backdrop-filter:blur(2px);
+    box-shadow:var(--shadow-2);
+  }
+  .login-logo{
+    width:72px; height:72px;
+    border-radius:16px;
+    display:block;
+    margin-bottom:16px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  }
+  .login-tag{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; letter-spacing:0.06em;
+    color:var(--amber);
+    background:rgba(224,145,46,0.14);
+    border:1px solid rgba(224,145,46,0.35);
+    padding:3px 8px; border-radius:3px;
+    margin-bottom:14px;
+  }
+  .login-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700; font-size:24px; color:#EDEFE7;
+    margin:0 0 4px;
+  }
+  .login-sub{
+    font-size:12px; color:var(--rail-ink-soft);
+    margin:0 0 26px;
+  }
+  .login-field{ margin-bottom:15px; }
+  .login-field label{
+    display:block; font-size:11px; color:var(--rail-ink-soft);
+    margin-bottom:6px; letter-spacing:0.02em;
+  }
+  .login-field input{
+    width:100%; padding:10px 12px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(231,233,225,0.2);
+    border-radius:6px;
+    color:#EDEFE7;
+  }
+  .login-field input:focus{ border-color:var(--amber); background:rgba(255,255,255,0.08); }
+  .login-field input::placeholder{ color:rgba(231,233,225,0.35); }
+  .login-error{
+    font-size:12px; color:#F4A79A;
+    background:rgba(178,58,46,0.16);
+    border:1px solid rgba(178,58,46,0.4);
+    border-radius:5px;
+    padding:8px 10px;
+    margin-bottom:15px;
+    display:none;
+  }
+  .login-error.show{ display:block; }
+  .login-btn{
+    width:100%;
+    padding:11px;
+    border-radius:6px;
+    border:1px solid var(--amber);
+    background:var(--amber);
+    color:var(--amber-ink);
+    font-weight:600; font-size:13.5px;
+    cursor:pointer;
+  }
+  .login-btn:hover{ background:#cc8228; }
+  .login-hint{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px solid rgba(231,233,225,0.12);
+    font-size:11px;
+    color:var(--rail-ink-soft);
+    line-height:1.6;
+  }
+  .login-hint .mono{ color:#D9BE8C; }
+  .login-foot{
+    text-align:center;
+    margin-top:18px;
+    font-size:11px;
+    color:rgba(231,233,225,0.35);
+  }
+  .rail-foot-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .rail-foot-actions{ display:flex; gap:6px; }
+  .rail-icon-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:5px;
+    border:1px solid rgba(231,233,225,0.18);
+    background:transparent; color:var(--rail-ink-soft);
+    cursor:pointer;
+  }
+  .rail-icon-btn:hover{ color:var(--rail-ink); border-color:rgba(231,233,225,0.4); }
+  .app-credit{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    padding:10px 0 0;
+  }
+  .gh-dot{
+    display:inline-block; width:6px; height:6px; border-radius:50%;
+    margin-right:6px; vertical-align:middle;
+  }
+  .gh-dot.on{ background:#5C9683; box-shadow:0 0 0 2px rgba(92,150,131,0.25); }
+  .gh-dot.off{ background:var(--rail-ink-soft); }
+  #railGithub .ri-count svg{ opacity:0.7; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+<script id="asset-data" type="application/json">{"Storage":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Serial Number","Status"],"rows":[{"No.":1,"Asset No.":"STR-001","User":"Heti","Lokasi":"Sunter","Jenis":"External HDD","Type":"Expansion Portable Drive","Merk":"","Model":"","Serial Number":"","Status":"Dead Stock"},{"No.":2,"Asset No.":"STR-002","User":"Bambang Haryanto","Lokasi":"Sunter","Jenis":"External HDD","Type":"Expansion Portable Drive","Merk":"Western Digital","Model":"","Serial Number":"","Status":"in use"},{"No.":3,"Asset No.":"STR-003","User":"Bambang Haryanto","Lokasi":"Sunter","Jenis":"External HDD","Type":"Expansion Portable Drive","Merk":"Seagate","Model":"SRD00F1","Serial Number":"NA7JNY6L","Status":"Dead Stock"},{"No.":2,"Asset No.":"STR-004","User":"IT","Lokasi":"Sunter","Jenis":"External HDD","Type":"Expansion Portable Drive","Merk":"Seagate","Model":"SRD0NF1","Serial Number":"NA8GY07E","Status":"in use"},{"No.":4,"Asset No.":"STR-005","User":"IT","Lokasi":"Sunter","Jenis":"External HDD","Type":"Expansion Portable Drive","Merk":"Seagate","Model":"SRD00F1","Serial Number":"NA49KE1D","Status":"in use"},{"No.":5,"Asset No.":"STR-006","User":"Antonia Tinawati","Lokasi":"Sunter","Jenis":"External HDD","Type":"Expansion Portable Drive","Merk":"Western Digital","Model":"My Passport","Serial Number":"WXP1AA8D7280","Status":"in use"},{"No.":6,"Asset No.":"STR-007","User":"Antonia Tinawati","Lokasi":"Sunter","Jenis":"External SSD","Type":"Expansion Portable Drive","Merk":"Samsung","Model":"MU-PE1T0S","Serial Number":"S5SKNS0T903397E","Status":"in use"},{"No.":7,"Asset No.":"STR-008","User":"Oki","Lokasi":"Sunter","Jenis":"External SSD","Type":"Expansion Portable Drive","Merk":"Samsung","Model":"MU-PE1T0S","Serial Number":"S6SKNS0T903391T","Status":"in use"},{"No.":8,"Asset No.":"STR-009","User":"Fibri","Lokasi":"Sunter","Jenis":"External SSD","Type":"Expansion Portable Drive","Merk":"Samsung","Model":"MU-PE1T0S","Serial Number":"S6SKNS0T903450D","Status":"in use"},{"No.":9,"Asset No.":"STR-010","User":"Angga","Lokasi":"Sunter","Jenis":"External SSD","Type":"Expansion Portable Drive","Merk":"Samsung","Model":"MU-PE1T0K","Serial Number":"S6SHNS0T703547","Status":"in use"},{"No.":10,"Asset No.":"STR-011","User":"IT","Lokasi":"Sunter","Jenis":"External HDD","Type":"Enclosure HDD","Merk":"HGST","Model":"1 TB","Serial Number":"SSJL5ADK","Status":"Stock"},{"No.":11,"Asset No.":"STR-012","User":"IT","Lokasi":"Sunter","Jenis":"External HDD","Type":"Enclosure HDD","Merk":"HGST","Model":"500 GB","Serial Number":"TC04J4EL","Status":"Stock"},{"No.":12,"Asset No.":"STR-013","User":"IT","Lokasi":"Sunter","Jenis":"External HDD ","Type":"Expansion Portable Drive","Merk":"Seagate","Model":"4 TB","Serial Number":"NACVMVDC","Status":"in use"},{"No.":13,"Asset No.":"STR-014","User":"IT","Lokasi":"Sunter","Jenis":"RAM Server ","Type":" Ecc DDR4 16 GB PC 2133 Mhz","Merk":"Team","Model":"16 GB","Serial Number":"","Status":"in use"},{"No.":14,"Asset No.":"STR-015","User":"IT","Lokasi":"Sunter","Jenis":"External HDD ","Type":"WD My Book 6 TB","Merk":"Western Digital","Model":"6 TB","Serial Number":"WDBBGB0060HBK-NA","Status":"in use"},{"No.":15,"Asset No.":"STR-016","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":16,"Asset No.":"STR-017","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":17,"Asset No.":"STR-018","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":18,"Asset No.":"STR-019","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":19,"Asset No.":"STR-020","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":20,"Asset No.":"STR-021","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":21,"Asset No.":"STR-022","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":22,"Asset No.":"STR-023","User":"","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":"","Asset No.":"Update :","User":"2019-01-16","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""}]},"Monitor":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model"],"rows":[{"No.":1,"Asset No.":"LCD-001","User":"Mardianah","Lokasi":"Sunter","Jenis":"Monitor LCD 15\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"B1630"},{"No.":2,"Asset No.":"LCD-002","User":"Imah","Lokasi":"Sunter","Jenis":"Monitor LCD 15\"","Type":"Wide Screen LCD Monitor","Merk":"BenQ","Model":"Seneye3 G615HDPL"},{"No.":3,"Asset No.":"LCD-003","User":"Tresa","Lokasi":"Sunter","Jenis":"Monitor LCD 15\"","Type":"Wide Screen LCD Monitor","Merk":"BenQ","Model":"Seneye3 G615HDPL"},{"No.":4,"Asset No.":"LCD-004","User":"Desi","Lokasi":"Sunter","Jenis":"Monitor LCD 15\"","Type":"Wide Screen LCD Monitor","Merk":"BenQ","Model":"Seneye3 G615HDPL"},{"No.":5,"Asset No.":"LCD-005","User":"Bani Setiawan","Lokasi":"Sunter","Jenis":"Monitor LCD 15\"","Type":"Wide Screen LCD Monitor","Merk":"BenQ","Model":"Seneye3 G615HDPL"},{"No.":6,"Asset No.":"LCD-006","User":"Widia","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"LG","Model":"E1942 LED"},{"No.":7,"Asset No.":"LCD-007","User":"Angga","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"LG","Model":"E1942 LED"},{"No.":8,"Asset No.":"LCD-008","User":"Heti Herawati","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"LG","Model":"E1942 LED"},{"No.":9,"Asset No.":"LCD-009","User":"Novita Sari","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"LG","Model":"E1942 LED"},{"No.":10,"Asset No.":"LCD-010","User":"SERVER","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":11,"Asset No.":"LCD-011","User":"Suwartono","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":12,"Asset No.":"LCD-012","User":"Teddy Soelartono","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":13,"Asset No.":"LCD-013","User":"Fibriana","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":14,"Asset No.":"LCD-014","User":"Aji Setiadi","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":15,"Asset No.":"LCD-015","User":"Moses","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":16,"Asset No.":"LCD-016","User":"Muhammad Idrus","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":17,"Asset No.":"LCD-017","User":"M. Ali Rosadi","Lokasi":"Sunter","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":18,"Asset No.":"LCD-018","User":"Marco Syauta","Lokasi":"","Jenis":"Monitor LED 19\"","Type":"Wide Screen LCD Monitor","Merk":"Samsung","Model":"S19C150F"},{"No.":19,"Asset No.":"LCD-019","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":""},{"No.":20,"Asset No.":"LCD-020","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":""},{"No.":21,"Asset No.":"LCD-021","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":""},{"No.":"","Asset No.":"Update :","User":"2018-07-12","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":""}]},"Printer":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Status"],"rows":[{"No.":1,"Asset No.":"PRN-001","User":"Dian","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Ink Cartridge","Merk":"Canon","Model":"Pixma IP1600","Status":"in use"},{"No.":2,"Asset No.":"PRN-002","User":"Dian","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Laser Jet","Merk":"HP","Model":"Laser Jet P1102","Status":"in use"},{"No.":3,"Asset No.":"PRN-003","User":"Widia","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Dot Matrix","Merk":"Epson","Model":"LX-300+II","Status":"in use"},{"No.":4,"Asset No.":"PRN-004","User":"Imah","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Ink Cartridge Infuse","Merk":"Epson","Model":"L-300","Status":"in use"},{"No.":5,"Asset No.":"PRN-005","User":"IT","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Laser Jet","Merk":"HP","Model":"Laser Jet P1102","Status":"in use"},{"No.":6,"Asset No.":"PRN-006","User":"Tresa","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Ink Cartridge Infuse","Merk":"Epson","Model":"L-300","Status":"in use"},{"No.":7,"Asset No.":"PRN-007","User":"Wartono","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Laser Jet","Merk":"HP","Model":"Laser Jet P1102","Status":"in use"},{"No.":8,"Asset No.":"PRN-008","User":"IT","Lokasi":"Sunter","Jenis":"Printer A4 Multifungsi","Type":"Copy Scan Print Fax","Merk":"Fuji Xerox","Model":"DocuPrint M2015 F","Status":"in use"},{"No.":9,"Asset No.":"PRN-009","User":"Fibriana","Lokasi":"Sunter","Jenis":"Printer A3","Type":"Ink Cartridge","Merk":"Epson","Model":"WorkForce WF-7011","Status":"in use"},{"No.":10,"Asset No.":"PRN-010","User":"Hesti","Lokasi":"Bandung","Jenis":"Printer A4","Type":"Copy Scan Print","Merk":"HP","Model":"Laser Jet MFP 135w","Status":"in use"},{"No.":11,"Asset No.":"PRN-011","User":"Bambang/Rully","Lokasi":"Sunter","Jenis":"Printer A4","Type":"Copy Scan Print","Merk":"HP","Model":"HP Deskjet Ink Adv 2776","Status":"in use"},{"No.":12,"Asset No.":"PRN-012","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":13,"Asset No.":"PRN-013","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":14,"Asset No.":"PRN-014","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":15,"Asset No.":"PRN-015","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":16,"Asset No.":"PRN-016","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":17,"Asset No.":"PRN-017","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":18,"Asset No.":"PRN-018","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":19,"Asset No.":"PRN-019","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":20,"Asset No.":"PRN-020","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":21,"Asset No.":"PRN-021","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":"","Asset No.":"Update :","User":"2018-07-12","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""}]},"Barcode Scanner":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Serial Number","Status"],"rows":[{"No.":1,"Asset No.":"BCR-001","User":"Tim Proses","Lokasi":"Sunter","Jenis":"Barcode Scanner","Type":"Barcode Scanner","Merk":"Solution","Model":"YT-860","Serial Number":20150911160,"Status":"in stock"},{"No.":2,"Asset No.":"BCR-002","User":"Tim Proses","Lokasi":"Sunter","Jenis":"Barcode Scanner","Type":"Barcode Scanner","Merk":"Symbol","Model":"DS4208","Serial Number":16137010500070,"Status":"in use"},{"No.":3,"Asset No.":"BCR-003","User":"Tim Proses (Polda)","Lokasi":"Polda","Jenis":"Barcode Scanner","Type":"Barcode Scanner","Merk":"Symbol","Model":"DS4208","Serial Number":"","Status":"in use"},{"No.":4,"Asset No.":"BCR-004","User":"Tim Proses","Lokasi":"Sunter","Jenis":"Barcode Scanner","Type":"Barcode Scanner","Merk":"Motorolla","Model":"DS4208","Serial Number":14259010504055,"Status":"in use"},{"No.":5,"Asset No.":"BCR-005","User":"Tim Proses","Lokasi":"Sunter","Jenis":"Barcode Scanner","Type":"Barcode Scanner","Merk":"Panda","Model":"PRJ-888","Serial Number":88821110805,"Status":"in use"},{"No.":"","Asset No.":"Update :","User":"2018-07-12","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""}]},"Scanner":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Status"],"rows":[{"No.":1,"Asset No.":"SCN-001","User":"IT","Lokasi":"Sunter","Jenis":"Scanner","Type":"Scanner Flatbed","Merk":"Canon","Model":"Canon Lide 110","Status":"in use"},{"No.":2,"Asset No.":"SCN-002","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":3,"Asset No.":"SCN-003","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":4,"Asset No.":"SCN-004","User":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""},{"No.":"","Asset No.":"Update :","User":"2018-07-12","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""}]},"Fax":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Status"],"rows":[{"No.":1,"Asset No.":"FAX-001","User":"IT","Lokasi":"Sunter","Jenis":"Fax Machine","Type":"Plain Paper Fax With Copier","Merk":"Panasonic","Model":"KX-FP711CX","Status":"in use"},{"No.":"","Asset No.":"Update :","User":"2018-07-12","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""}]},"Networking":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Status","Tanggal Pembelian","Jumlah"],"rows":[{"No.":1,"Asset No.":"NET-001","User":"IT","Lokasi":"Sunter","Jenis":"Modem Router","Type":"150M Wireless N ADSL2+","Merk":"TP-Link","Model":"TD-W8151N","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":2,"Asset No.":"NET-002","User":"IT","Lokasi":"Sunter","Jenis":"Modem Router","Type":"300 Mbps Wireless N ADSL2+","Merk":"TP-Link","Model":"TD-W8961ND","Status":"stock","Tanggal Pembelian":"","Jumlah":""},{"No.":3,"Asset No.":"NET-003","User":"IT","Lokasi":"Sunter","Jenis":"Switch Hub","Type":"24 Port Switch Hub","Merk":"Allied Telesis","Model":"AT-FSW724","Status":"Dead Stock","Tanggal Pembelian":"","Jumlah":""},{"No.":4,"Asset No.":"NET-004","User":"IT","Lokasi":"Sunter","Jenis":"Print Server","Type":"1 LAN, 2 USB, 1 LPT Port - DPR 1061","Merk":"D-Link","Model":"DPR-1061","Status":"stock","Tanggal Pembelian":"","Jumlah":""},{"No.":5,"Asset No.":"NET-005","User":"IT","Lokasi":"Sunter","Jenis":"Modem Router","Type":"150M Wireless N ADSL2+","Merk":"TP-Link","Model":"TD-W8151N","Status":"stock","Tanggal Pembelian":"","Jumlah":""},{"No.":6,"Asset No.":"NET-006","User":"IT","Lokasi":"Sunter","Jenis":"Switch Hub","Type":"24 Port Switch Hub","Merk":"Allied Telesis","Model":"AT-FS724L","Status":"Dead Stock","Tanggal Pembelian":"","Jumlah":""},{"No.":7,"Asset No.":"NET-007","User":"IT","Lokasi":"Sunter","Jenis":"Switch Hub","Type":"24 Port Switch Hub","Merk":"Allied Telesis","Model":"AT-FS724L","Status":"Dead Stock","Tanggal Pembelian":"","Jumlah":""},{"No.":8,"Asset No.":"NET-008","User":"IT","Lokasi":"Sunter","Jenis":"Switch Hub","Type":"24 Port Switch Hub","Merk":"Link-SYS","Model":"LGS-124","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":9,"Asset No.":"NET-009","User":"IT","Lokasi":"Sunter","Jenis":"Switch Hub","Type":"24 Port Switch Hub","Merk":"Link-SYS","Model":"LGS-124","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":10,"Asset No.":"NET-010","User":"Bambang","Lokasi":"Sunter","Jenis":"WLAN Usb Adapter","Type":"1 USB","Merk":"TP-Link","Model":"TL-WN823N","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":11,"Asset No.":"NET-011","User":"Antonia","Lokasi":"Sunter","Jenis":"Ethernet Adapter","Type":"1 Port RJ45 usb-C","Merk":"Ugreen","Model":"CM199","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":12,"Asset No.":"NET-012","User":"Bambang","Lokasi":"Sunter","Jenis":"Ethernet Adapter","Type":"1 Port RJ45 usb-C","Merk":"Ugreen","Model":"CM199","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":13,"Asset No.":"NET-013","User":"Oki","Lokasi":"Sunter","Jenis":"Ethernet Adapter","Type":"1 Port RJ45 usb-C","Merk":"Ugreen","Model":"CM199","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":14,"Asset No.":"NET-014","User":"Fibri","Lokasi":"Sunter","Jenis":"Ethernet Adapter","Type":"1 Port RJ45 usb-C","Merk":"Ugreen","Model":"CM199","Status":"in use","Tanggal Pembelian":"","Jumlah":""},{"No.":15,"Asset No.":"NET-015","User":"Chairul","Lokasi":"Sunter","Jenis":"Ethernet Adapter","Type":"1 Port RJ45 usb-C","Merk":"Ugreen","Model":"CM199","Status":"stock","Tanggal Pembelian":"","Jumlah":""},{"No.":16,"Asset No.":"NET-016","User":"IT","Lokasi":"Sunter","Jenis":"TP Link TL WN725N","Type":"USB Wifi","Merk":"TP Link","Model":"","Status":"","Tanggal Pembelian":"26 September 2025","Jumlah":"3 pcs"},{"No.":17,"Asset No.":"NET-017","User":"IT","Lokasi":"Sunter","Jenis":"Router Mikrotik ","Type":"RB450Gx4","Merk":"","Model":"","Status":"","Tanggal Pembelian":"15 Oktober 2025","Jumlah":""},{"No.":18,"Asset No.":"NET-018","User":"IT","Lokasi":"Sunter","Jenis":"Router wifi ruijie","Type":"RG EW1200G-Pro","Merk":"Ruijie","Model":"","Status":"","Tanggal Pembelian":"15 Oktober 2025 ","Jumlah":"3 pcs"},{"No.":19,"Asset No.":"NET-019","User":"IT","Lokasi":"Sunter","Jenis":"Wire Tracker Network JW-360","Type":"","Merk":"","Model":"","Status":"","Tanggal Pembelian":"15 Oktober 2025","Jumlah":""},{"No.":20,"Asset No.":"NET-020","User":"IT","Lokasi":"Sunter","Jenis":"Connector LAN to Type C","Type":"","Merk":"Ugreen","Model":"","Status":"","Tanggal Pembelian":"4 November 2025","Jumlah":"1 pcs"},{"No.":21,"Asset No.":"NET-021","User":"IT","Lokasi":"Sunter","Jenis":"Connector LAN to Type C","Type":"","Merk":"Ugreen","Model":"","Status":"","Tanggal Pembelian":"22 Desember 2025","Jumlah":"2 pcs"},{"No.":22,"Asset No.":"NET-022","User":"IT","Lokasi":"Sunter","Jenis":"","Type":"","Merk":"","Model":"","Status":"","Tanggal Pembelian":"","Jumlah":""},{"No.":"","Asset No.":"Update :","User":"12/22/2025","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":"","Tanggal Pembelian":"","Jumlah":""}]},"Laptop":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Merk","Type","Model","Serial Number","Status","Vendor","Tgl. Pembelian","Operating System","Ofiice","Keterangan"],"rows":[{"No.":1,"Asset No.":"NBK-001","User":"Ponadi","Lokasi":"Bogor","Jenis":"Notebook","Merk":"HP Compaq","Type":"Compaq Presario CQ43","Model":"CQ43","Serial Number":"","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":"Belum Konfirmasi Ulang"},{"No.":2,"Asset No.":"NBK-002","User":"Eko","Lokasi":"Karawang","Jenis":"Notebook","Merk":"HP","Type":"HP 1000-1111 TU","Model":"1000-1111 TU","Serial Number":"","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":"Belum Konfirmasi Ulang"},{"No.":3,"Asset No.":"NBK-003","User":"Sofyan","Lokasi":"Cirebon","Jenis":"Notebook","Merk":"HP","Type":"HP 1000-1111 TU","Model":"1000-1111 TU","Serial Number":"","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":"Belum Konfirmasi Ulang"},{"No.":4,"Asset No.":"NBK-004","User":"","Lokasi":"Bandung","Jenis":"Notebook","Merk":"ASUS","Type":"A45A Core i3","Model":"VX180D","Serial Number":"","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":"Belum Konfirmasi Ulang"},{"No.":5,"Asset No.":"NBK-005","User":"M. Yusuf","Lokasi":"Serang","Jenis":"Notebook","Merk":"ASUS","Type":"A45A Core i3","Model":"VX180D","Serial Number":"","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":"Belum Konfirmasi Ulang"},{"No.":6,"Asset No.":"NBK-006","User":"Jujum","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"ASUS","Type":"A455L","Model":"WX110D","Serial Number":"WU21713852C","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":"MTB"},{"No.":7,"Asset No.":"NBK-007","User":"Yunico","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"Probook 440 G4","Model":"1AA29PA","Serial Number":"5CD6497C7B","Status":"in use","Vendor":"HP Store (CPU Com)","Tgl. Pembelian":"","Operating System":"x","Ofiice":"x","Keterangan":""},{"No.":8,"Asset No.":"NBK-008","User":"Dhimas","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"Probook 240 G3","Model":"K5A89PA","Serial Number":"CND51904K2","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"x","Ofiice":"x","Keterangan":""},{"No.":10,"Asset No.":"NBK-009","User":"Wiwin","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"Probook 440 G4","Model":"1AA30PA","Serial Number":"5CD7131NO4","Status":"in use","Vendor":"HP Store (CPU Com)","Tgl. Pembelian":"2018-02-02","Operating System":"Windows 10 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":9,"Asset No.":"NBK-010","User":"Muslimin","Lokasi":"Surabaya","Jenis":"Notebook","Merk":"HP","Type":"Probook 440 G4","Model":"1AA29PA","Serial Number":"5CD65157V9","Status":"in use","Vendor":"HP Store (CPU Com)","Tgl. Pembelian":"","Operating System":"x","Ofiice":"x","Keterangan":"Rusak"},{"No.":11,"Asset No.":"NBK-011","User":"Dina","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"Probook 440 G4","Model":"1AA30PA","Serial Number":"5CD7131NNT","Status":"in use","Vendor":"HP Store (CPU Com)","Tgl. Pembelian":"2018-02-02","Operating System":"Windows 10 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":12,"Asset No.":"NBK-012","User":"Hesti","Lokasi":"Bandung","Jenis":"Notebook","Merk":"HP","Type":"Probook 240 G3","Model":"K5A89PA","Serial Number":"CND5190149","Status":"in use","Vendor":"","Tgl. Pembelian":"","Operating System":"x","Ofiice":"","Keterangan":""},{"No.":13,"Asset No.":"NBK-013","User":"Desi","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"Probook 440 G5","Model":"3ZS27PA","Serial Number":"5CD8118NLN","Status":"in use","Vendor":"HP Store (CPU Com)","Tgl. Pembelian":"2018-07-17","Operating System":"Windows 10 OEM","Ofiice":"x","Keterangan":""},{"No.":14,"Asset No.":"NBK-014","User":"IT Dept.","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"Elitebook 840 G2","Model":"G8R98AV","Serial Number":"5CG54126R9","Status":"in use","Vendor":"HP Store (Viscom)","Tgl. Pembelian":"2018-11-23","Operating System":"Windows 10 OEM","Ofiice":"MS. Office 2019","Keterangan":""},{"No.":15,"Asset No.":"NBK-015","User":"IT Dept.","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"Elitebook 830 G5","Model":"HP 5EG40AV ","Serial Number":"5CG8462WSZ","Status":"in use","Vendor":"HP Store (Viscom)","Tgl. Pembelian":"2019-08-29","Operating System":"Windows 10 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":16,"Asset No.":"NBK-016","User":"Bambang Aryanto","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"ACER","Type":"SWIFT 3 INFINITY 4","Model":"SF314-511-54Y9","Serial Number":"NXABNSN00C","Status":"in use","Vendor":"Infonet","Tgl. Pembelian":"2022-02-24","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":17,"Asset No.":"NBK-017","User":"Antonia Tinawati","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"ACER","Type":"SWIFT 3 INFINITY 4","Model":"SF314-511-76QK","Serial Number":"NXABNSN00D","Status":"in use","Vendor":"Infonet","Tgl. Pembelian":"2022-03-01","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":18,"Asset No.":"NBK-018","User":"Hesti","Lokasi":"Bandung","Jenis":"Notebook","Merk":"ACER","Type":"ASPIRE 5","Model":"A514-54-346F","Serial Number":"UNA28SD0022","Status":"in use","Vendor":"Mitra Harco","Tgl. Pembelian":"2022-08-05","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":19,"Asset No.":"NBK-019","User":"Angga","Lokasi":"Jakarta","Jenis":"Tablet 2 in 1","Merk":"Microsoft","Type":"Surface Go 2","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"2022-11-10","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":20,"Asset No.":"NBK-020","User":"Oki","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"PAVILION 14 ","Model":"DV2000TX","Serial Number":"5CD23959ZM","Status":"in use","Vendor":"Mitra Harco","Tgl. Pembelian":"2022-12-01","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":21,"Asset No.":"NBK-021","User":"Fibri","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"PAVILION 14 ","Model":"DV2000TX","Serial Number":"5CD23959SC","Status":"in use","Vendor":"Mitra Harco","Tgl. Pembelian":"2022-12-01","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":22,"Asset No.":"NBK-022","User":"Chairul","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"HP","Type":"PAVILION 14 ","Model":"DV2000TX","Serial Number":"5CD23959TS","Status":"in use","Vendor":"Mitra Harco","Tgl. Pembelian":"2022-12-15","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":23,"Asset No.":"NBK-023","User":"Adji","Lokasi":"Medan","Jenis":"Notebook","Merk":"Lenovo","Type":"LENOVO V14 G3 IAP","Model":"LENOVO V14 G3 IAP","Serial Number":"PF550F12","Status":"in use","Vendor":"Gabe Jaya","Tgl. Pembelian":"2024-01-06","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":24,"Asset No.":"NBK-024","User":"Bambang Aryanto","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"Acer","Type":"Acer Swift Go 14 AI","Model":"Acer Swift Go 14 AI","Serial Number":"NXKYXSN0014360449C3400","Status":"in use","Vendor":"AGRES.ID","Tgl. Pembelian":"2025-10-10","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":"Di pake Pak Bambang "},{"No.":25,"Asset No.":"NBK-025","User":"Antonia Tinawati","Lokasi":"Jakarta","Jenis":"Notebook","Merk":"Lenovo","Type":"Lenovo Yoga Slim 7","Model":"Lenovo Yoga Slim 7","Serial Number":"MP2SA2PS","Status":"in use","Vendor":"AGRES.ID","Tgl. Pembelian":"2025-10-10","Operating System":"Windows 11 OEM","Ofiice":"MS. Office Student","Keterangan":""},{"No.":"","Asset No.":"","User":"Antonia Tinawati","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"Update :","User":"User Name","Lokasi":"SN00D14816@outlook.com","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Password","Lokasi":"office2021","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Bambang Aryanto","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"User Name","Lokasi":"NXAB3DB0@outlook.com","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Password","Lokasi":"office2021","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Hesti","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"User Name","Lokasi":"UNA2175D@outlook.com","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Password","Lokasi":"office2021","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Oki","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"User Name","Lokasi":"HP-5CD23959ZM@outlook.com","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Password","Lokasi":"office2021","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Fibri","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"User Name","Lokasi":"HP-5CD23959SC@outlook.com","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Password","Lokasi":"office2021","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Chairul","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"User Name","Lokasi":"HP-5CD23959TS@outlook.com","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Password","Lokasi":"office2021","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Medan","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"User Name","Lokasi":"p550f12@outlook.com/pf550@outlook.com","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"Password","Lokasi":"office2021","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"account.microsoft.com/services","Lokasi":"","Jenis":"","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"Oktober 2025","Asset No.":"","User":"Email Laptop user","Lokasi":"","Jenis":"1. Laptop Pak Bambang","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"","Lokasi":"","Jenis":"email : laptopacerbambang@gmail.com","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"","Lokasi":"","Jenis":"password : prakarsa#1","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"31 Desember 2025","Asset No.":"","User":"Email Laptop user","Lokasi":"","Jenis":"2. Laptop Desy ","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"","Lokasi":"","Jenis":"email : laptopdesy@gmail.com","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"","Lokasi":"","Jenis":"password : prakarsa","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""},{"No.":"","Asset No.":"","User":"","Lokasi":"","Jenis":"Password Microsoft : prakarsa#1","Merk":"","Type":"","Model":"","Serial Number":"","Status":"","Vendor":"","Tgl. Pembelian":"","Operating System":"","Ofiice":"","Keterangan":""}]},"UPS":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Status"],"rows":[{"No.":1,"Asset No.":"UPS-001","User":"Server","Lokasi":"Jakarta","Jenis":"UPS","Type":"1500 VA","Merk":"APC","Model":"SUA 1500i","Status":"in use"},{"No.":2,"Asset No.":"UPS-101","User":"Teddy Soelartono","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":3,"Asset No.":"UPS-200","User":"Bambang Aryanto","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":4,"Asset No.":"UPS-201","User":"Muhammad Idrus","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":5,"Asset No.":"UPS-202","User":"Adi","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":6,"Asset No.":"UPS-203","User":"Wartono","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":7,"Asset No.":"UPS-204","User":"Aji","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":8,"Asset No.":"UPS-205","User":"Zakaria","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":9,"Asset No.":"UPS-206","User":"Huda","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":10,"Asset No.":"UPS-207","User":"Angga","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":11,"Asset No.":"UPS-301","User":"Ono","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":12,"Asset No.":"UPS-302","User":"Erlangga","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":13,"Asset No.":"UPS-305","User":"Anggi","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":14,"Asset No.":"UPS-308","User":"Yunus","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":15,"Asset No.":"UPS-309","User":"Fibriana","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"dead stock"},{"No.":16,"Asset No.":"UPS-311","User":"Imah","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"dead stock"},{"No.":17,"Asset No.":"UPS-313","User":"Desi","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":18,"Asset No.":"UPS-314","User":"Novita","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":19,"Asset No.":"UPS-315","User":"Yoga","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":20,"Asset No.":"UPS-316","User":"Dina","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":21,"Asset No.":"UPS-317","User":"Yunico","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":22,"Asset No.":"UPS-318","User":"Gunawan","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"in use"},{"No.":23,"Asset No.":"UPS-319","User":"Hadi","Lokasi":"Jakarta","Jenis":"UPS","Type":"500 VA","Merk":"APC","Model":"BR500CI-AS","Status":"dead stock"},{"No.":24,"Asset No.":"UPS-402","User":"Jujum","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":25,"Asset No.":"UPS-405","User":"Dian","Lokasi":"Jakarta","Jenis":"UPS","Type":"650 VA","Merk":"APC","Model":"BX650LI-MS","Status":"in use"},{"No.":26,"Asset No.":"UPS-406","User":"Server","Lokasi":"Jakarta","Jenis":"UPS","Type":"1500 VA","Merk":"APC","Model":"SMC1500iC","Status":"in use"},{"No.":"","Asset No.":"Update :","User":"2018-12-04","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Status":""}]},"Mesin Absen":{"columns":["No.","Asset No.","Administrator","Kode User","Password","Lokasi","Jenis","Type","Merk","Model","Serial Number","Status"],"rows":[{"No.":1,"Asset No.":"TAT-001","Administrator":"Muhammad Idrus","Kode User":2,"Password":"","Lokasi":"Jakarta","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"","Serial Number":"","Status":"in use"},{"No.":2,"Asset No.":"TAT-002","Administrator":"Muhammad Idrus","Kode User":2,"Password":"","Lokasi":"CAO Jakarta","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P207","Serial Number":"","Status":"in use"},{"No.":3,"Asset No.":"TAT-003","Administrator":"Hesti Heriati","Kode User":100,"Password":123,"Lokasi":"Bandung","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P207","Serial Number":"BR64184560157","Status":"in use"},{"No.":4,"Asset No.":"TAT-004","Administrator":"Muhammad Yusuf","Kode User":79,"Password":123,"Lokasi":"Serang","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P207","Serial Number":"BR64184561640","Status":"in use"},{"No.":5,"Asset No.":"TAT-005","Administrator":"Lucky Suyoto","Kode User":85,"Password":123,"Lokasi":"Cirebon","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P207","Serial Number":"BR64184560131","Status":"in use"},{"No.":6,"Asset No.":"TAT-006","Administrator":"Sri Mulyono","Kode User":132,"Password":123,"Lokasi":"Surabaya","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P207","Serial Number":"BR64185060044","Status":"in use"},{"No.":7,"Asset No.":"TAT-007","Administrator":"Dudung Kustiawan","Kode User":106,"Password":123,"Lokasi":"Sukabumi","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P208","Serial Number":"CJ6G233961800","Status":"in use"},{"No.":8,"Asset No.":"TAT-008","Administrator":"Kuspina Sundari","Kode User":147,"Password":123,"Lokasi":"Lampung","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P208","Serial Number":"QBB1241201775","Status":"in use"},{"No.":9,"Asset No.":"TAT-009","Administrator":"-","Kode User":"","Password":"","Lokasi":"CAO Jakarta","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P208","Serial Number":"QBB1241201861","Status":"in use"},{"No.":10,"Asset No.":"TAT-010","Administrator":"Adji","Kode User":167,"Password":123,"Lokasi":"Medan","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P208","Serial Number":"QBB1241200978","Status":"in use"},{"No.":11,"Asset No.":"TAT-011","Administrator":"Subechan","Kode User":92,"Password":123,"Lokasi":"Karawang","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P208","Serial Number":"QBB1241201300","Status":"in use"},{"No.":12,"Asset No.":"TAT-012","Administrator":"Bimo","Kode User":159,"Password":123,"Lokasi":"Korlantas","Jenis":"Mesin Absen","Type":"Finger Print","Merk":"Solution","Model":"P208","Serial Number":"QBB1241201435","Status":"in use"},{"No.":13,"Asset No.":"TAT-013","Administrator":"","Kode User":"","Password":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""},{"No.":"","Asset No.":"Update :","Administrator":"2019-03-28","Kode User":"","Password":"","Lokasi":"","Jenis":"","Type":"","Merk":"","Model":"","Serial Number":"","Status":""}]},"IP":{"columns":["IP","Asset No.","User","Operating System","Office","Antivirus"],"rows":[{"IP":"192.168.1.1","Asset No.":"","User":"Admin","Operating System":"Mikrotik","Office":"","Antivirus":""},{"IP":"192.168.1.2","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.3","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.4","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.5","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.6","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.7","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.8","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.9","Asset No.":"","User":"","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.10","Asset No.":"PMA-12","User":"Teddy Soelartono","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.11","Asset No.":"CPU-029","User":"M. Ali Rosadi","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.12","Asset No.":"PMA-029","User":"Bambang Aryanto","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.13","Asset No.":"CPU-201","User":"M. Idrus","Operating System":"Windows 2010","Office":"Office 2019","Antivirus":""},{"IP":"192.168.1.14","Asset No.":"CPU-203","User":"Suwartono","Operating System":"Windows 2010","Office":"WPS Office","Antivirus":""},{"IP":"192.168.1.15","Asset No.":"CPU-204","User":"Aji Setiadi","Operating System":"Windows 2010","Office":"Office 2019","Antivirus":""},{"IP":"192.168.1.16","Asset No.":"PMA-16","User":"Zakaria","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.17","Asset No.":"CPU-206","User":"Ahmad Nurhuda","Operating System":"Windows 2010","Office":"WPS Office","Antivirus":""},{"IP":"192.168.1.18","Asset No.":"PMA-11","User":"Angga Dwi Cahyo","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.19","Asset No.":"CPU-305","User":"Anggie Ariesta","Operating System":"Windows 2010","Office":"WPS Office","Antivirus":""},{"IP":"192.168.1.20","Asset No.":"PMA-5","User":"Yunus","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.21","Asset No.":"PMA-24","User":"Yunus (SDP)","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.22","Asset No.":"CPU-309","User":"Fibriana","Operating System":"Windows 2010","Office":"Office 2019","Antivirus":""},{"IP":"192.168.1.23","Asset No.":"PMA-06","User":"Siti Nur Fatimah","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.24","Asset No.":"PMA-313","User":"Desi Vartini","Operating System":"Windows 2010","Office":"WPS Office","Antivirus":""},{"IP":"192.168.1.25","Asset No.":"PMA-21","User":"Erlangga","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.26","Asset No.":"CPU-314","User":"Novita Sari","Operating System":"Windows 2010","Office":"Office 2019","Antivirus":""},{"IP":"192.168.1.27","Asset No.":"PMA-27","User":"Dina Ayuliana","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.28","Asset No.":"PMA-26","User":"Hadi","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.29","Asset No.":"CPU-318","User":"Gunawan","Operating System":"Windows 2010","Office":"WPS Office","Antivirus":""},{"IP":"192.168.1.30","Asset No.":"PMA-17","User":"Yunico","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.31","Asset No.":"PMA-20","User":"Alby Yoga","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.32","Asset No.":"PMA-23","User":"Dian","Operating System":"","Office":"","Antivirus":""},{"IP":"192.168.1.33","Asset No.":"PMA-15","User":"Jujum","Operating System":"","Office":"","Antivirus":""},{"IP":"","Asset No.":"Update :","User":"2018-07-12","Operating System":"","Office":"","Antivirus":""}]},"PC":{"columns":["No.","Asset No.","User","Lokasi","Motherboard","Processor","VGA","Memory","DVD-Rom","Harddisk","Cashing","Power Supply","Keyboard","Mouse"],"rows":[{"No.":1,"Asset No.":"CPU-404","User":"Mardianah","Lokasi":"Sunter","Motherboard":"GIGABYTE GA-631M-ES2C","Processor":"Intel Pentium CPU E5800 3,20 Ghz","VGA":"Intel GMA 3100 Onboard","Memory":"Kingstone 2 GB","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech K200 USB","Mouse":"Logitech 8100 Optical USB"},{"No.":3,"Asset No.":"CPU-003","User":"Tresa","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":6,"Asset No.":"CPU-006","User":"Widia","Lokasi":"Sunter","Motherboard":"Foxconn H61MX","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 500 Gb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":7,"Asset No.":"CPU-007","User":"Angga","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":8,"Asset No.":"CPU-008","User":"Heti Herawati","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":15,"Asset No.":"CPU-015","User":"Moses","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":12,"Asset No.":"CPU-101","User":"Teddy Soelartono","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":16,"Asset No.":"CPU-201","User":"Muhammad Idrus","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"G-Force GT 630 2 2 Gb","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 1 Tb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":17,"Asset No.":"CPU-202","User":"M. Ali Rosyadi","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-7100 CPU 3,90 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR4 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":11,"Asset No.":"CPU-203","User":"Suwartono","Lokasi":"Sunter","Motherboard":"GIGABYTE H110M DS2","Processor":"Intel Core i3-7100 CPU 3,90 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR4 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 1 Tb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":14,"Asset No.":"CPU-204","User":"Aji Setiadi","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":5,"Asset No.":"CPU-306-FP PMA","User":"Muhammad Yunus","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":13,"Asset No.":"CPU-309","User":"Fibriana","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":2,"Asset No.":"CPU-311","User":"Imah","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":4,"Asset No.":"CPU-313","User":"Desi","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":9,"Asset No.":"CPU-314","User":"Novita Sari","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":19,"Asset No.":"CPU-315","User":"Alby Yoga","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-7100 CPU 3,90 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR4 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 2 Tb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":10,"Asset No.":"CPU-010","User":"SERVER","Lokasi":"Sunter","Motherboard":"Server HP Proliant ML110G7-474","Processor":"","VGA":"","Memory":"ECC DDR3-10600 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"HP BuiltUp","Power Supply":"350 Watt","Keyboard":"HP USB","Mouse":"HP Optical USB"},{"No.":10,"Asset No.":"CPU-026","User":"SERVER","Lokasi":"Sunter","Motherboard":"Server HP Proliant ML110G7-474","Processor":"","VGA":"","Memory":"ECC DDR3-10600 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"HP BuiltUp","Power Supply":"350 Watt","Keyboard":"HP USB","Mouse":"HP Optical USB"},{"No.":11,"Asset No.":"CPU-027","User":"SERVER STNK UPLOAD","Lokasi":"Sunter","Motherboard":"Asrock b650m pro","Processor":"Ryzen 5-8400f ","VGA":"vga card gtx 1650 4gb","Memory":"DDR5 16gb","DVD-Rom":"","Harddisk":"Samsung  m.2 nvme 500gb & SSD samsung 870evo 2tb ","Cashing":"CUBE GAMING","Power Supply":"550 Watt","Keyboard":"Unitech","Mouse":"Unitech Cable"},{"No.":"","Asset No.":"Update :","User":"2018-07-12","Lokasi":"","Motherboard":"","Processor":"","VGA":"","Memory":"","DVD-Rom":"","Harddisk":"","Cashing":"","Power Supply":"","Keyboard":"","Mouse":""}]},"PC (Old)":{"columns":["No.","Asset No.","User","Lokasi","Motherboard","Processor","VGA","Memory","DVD-Rom","Harddisk","Cashing","Power Supply","Keyboard","Mouse"],"rows":[{"No.":1,"Asset No.":"CPU-001","User":"Mardianah","Lokasi":"Sunter","Motherboard":"GIGABYTE GA-631M-ES2C","Processor":"Intel Pentium CPU E5800 3,20 Ghz","VGA":"Intel GMA 3100 Onboard","Memory":"Kingstone 2 GB","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech K200 USB","Mouse":"Logitech 8100 Optical USB"},{"No.":2,"Asset No.":"CPU-002","User":"Imah","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":3,"Asset No.":"CPU-003","User":"Tresa","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":4,"Asset No.":"CPU-004","User":"Desi","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":5,"Asset No.":"CPU-005","User":"Bani Setiawan","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":6,"Asset No.":"CPU-006","User":"Widia","Lokasi":"Sunter","Motherboard":"Foxconn H61MX","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 500 Gb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech M100r Optical USB"},{"No.":7,"Asset No.":"CPU-007","User":"Angga","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":8,"Asset No.":"CPU-008","User":"Heti Herawati","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":9,"Asset No.":"CPU-314","User":"Novita Sari","Lokasi":"Sunter","Motherboard":"Intel DH61","Processor":"Intel Pentium CPU G630 2,70 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Corsair 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"WD 1 Tb","Cashing":"Power Logic MODENA GT-200","Power Supply":"250 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":10,"Asset No.":"CPU-010","User":"SERVER","Lokasi":"Sunter","Motherboard":"Server HP Proliant ML110G7-474","Processor":"","VGA":"","Memory":"ECC DDR3-10600 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"HP BuiltUp","Power Supply":"350 Watt","Keyboard":"HP USB","Mouse":"HP Optical USB"},{"No.":11,"Asset No.":"CPU-203","User":"Suwartono","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":12,"Asset No.":"CPU-012","User":"Teddy Soelartono","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":13,"Asset No.":"CPU-309","User":"Fibriana","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":14,"Asset No.":"CPU-014","User":"Aji Setiadi","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":15,"Asset No.":"CPU-015","User":"Moses","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":16,"Asset No.":"CPU-016","User":"Muhammad Idrus","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-3220 CPU 3,30 Ghz","VGA":"G-Force GT 630 2 2 Gb","Memory":"DDR3 Kingstone 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 1 Tb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":17,"Asset No.":"CPU-202","User":"M. Ali Rosyadi","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-7100 CPU 3,90 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR4 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 500 Gb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech PS/2","Mouse":"Logitech B100 Optical USB"},{"No.":19,"Asset No.":"CPU-315","User":"Alby Yoga","Lokasi":"Sunter","Motherboard":"GIGABYTE H61M S2P","Processor":"Intel Core i3-7100 CPU 3,90 Ghz","VGA":"Intel HD Graphic Onboard","Memory":"DDR4 4 Gb","DVD-Rom":"DVD-RW","Harddisk":"Seagate 2 Tb","Cashing":"Simbadda X","Power Supply":"380 Watt","Keyboard":"Logitech USB","Mouse":"Logitech M100r Optical USB"},{"No.":"","Asset No.":"Update :","User":"2018-07-12","Lokasi":"","Motherboard":"","Processor":"","VGA":"","Memory":"","DVD-Rom":"","Harddisk":"","Cashing":"","Power Supply":"","Keyboard":"","Mouse":""}]},"Software":{"columns":["No.","Asset No.","User","Lokasi","Jenis","Type","Merk","Model","Status"],"rows":[{"No.":1,"Asset No.":"SWF-001","User":"CPU-006","Lokasi":"Sunter","Jenis":"Software - FA","Type":"Accounting Software","Merk":"AbiPro","Model":"AbiPro Software","Status":"in use"},{"No.":2,"Asset No.":"SWF-002","User":"IT","Lokasi":"Sunter","Jenis":"Software Antivirus","Type":"Software Antivirus","Merk":"Kaspersky","Model":"","Status":""},{"No.":3,"Asset No.":"SWF-003","User":"IT","Lokasi":"Sunter","Jenis":"Software Antivirus","Type":"Software Antivirus","Merk":"Kaspersky","Model":"","Status":""},{"No.":4,"Asset No.":"SWF-004","User":"IT","Lokasi":"Sunter","Jenis":"Software Antivirus","Type":"Software Antivirus","Merk":"Kaspersky","Model":"","Status":""},{"No.":5,"Asset No.":"SWF-005","User":"IT","Lokasi":"Sunter","Jenis":"Windows Server","Type":"Windows Server 2008 R2","Merk":"Windows","Model":"Server 2008 R2","Status":"in user CPU PMA-10"},{"No.":6,"Asset No.":"SWF-006","User":"IT","Lokasi":"Sunter","Jenis":"Software Antivirus","Type":"Software Antivirus","Merk":"Kaspersky","Model":"","Status":""},{"No.":7,"Asset No.":"SWF-007","User":"IT","Lokasi":"Sunter","Jenis":"Software Antivirus","Type":"Software Antivirus","Merk":"Kaspersky","Model":"","Status":""},{"No.":8,"Asset No.":"SWF-008","User":"IT","Lokasi":"Sunter","Jenis":"Software Antivirus","Type":"Software Antivirus","Merk":"Kaspersky","Model":"","Status":""}]},"Operating System":{"columns":["No.","Licence Number","Komputer","User","Lokasi","Jenis","Type","Merk","Model","Status"],"rows":[{"No.":1,"Licence Number":87359780,"Komputer":"CPU-315","User":"Albi Yoga","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":2,"Licence Number":87359780,"Komputer":"CPU-204","User":"Aji Setiadi","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":3,"Licence Number":87359780,"Komputer":"CPU-203","User":"Suwartono","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":4,"Licence Number":87359780,"Komputer":"CPU-206","User":"Ahmad Nurhuda","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":5,"Licence Number":87359780,"Komputer":"CPU-305","User":"Anggie Variska","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":6,"Licence Number":87359780,"Komputer":"CPU-309","User":"Fibriana","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":7,"Licence Number":87359780,"Komputer":"CPU-313","User":"Desi","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":8,"Licence Number":87359780,"Komputer":"CPU-314","User":"Novita Sari","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":9,"Licence Number":87359780,"Komputer":"CPU-318","User":"Gunawan","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":10,"Licence Number":87702311,"Komputer":"CPU-201","User":"Muhammad Idrus","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"},{"No.":11,"Licence Number":87702311,"Komputer":"CPU-308","User":"Muhammad Yunus","Lokasi":"Sunter","Jenis":"Operating System","Type":"Windows 2010","Merk":"Microsoft","Model":2010,"Status":"in use"}]},"Office Software":{"columns":["No.","Licence Number","Komputer","User","Lokasi","Jenis","Type","Merk","Model","Status"],"rows":[{"No.":2,"Licence Number":87332454,"Komputer":"CPU-204","User":"Aji Setiadi","Lokasi":"Sunter","Jenis":"Software Office","Type":"Office 2019","Merk":"Microsoft","Model":2019,"Status":"in use"},{"No.":3,"Licence Number":87332454,"Komputer":"CPU-309","User":"Fibriana","Lokasi":"Sunter","Jenis":"Software Office","Type":"Office 2019","Merk":"Microsoft","Model":2019,"Status":"in use"},{"No.":4,"Licence Number":87332454,"Komputer":"CPU-314","User":"Novita Sari","Lokasi":"Sunter","Jenis":"Software Office","Type":"Office 2019","Merk":"Microsoft","Model":2019,"Status":"in use"},{"No.":5,"Licence Number":87702315,"Komputer":"NBK-","User":"Antonia Tinawati","Lokasi":"Sunter","Jenis":"Software Office","Type":"Office 2019","Merk":"Microsoft","Model":2019,"Status":"in use"},{"No.":6,"Licence Number":87702315,"Komputer":"CPU-201","User":"Muhammad Idrus","Lokasi":"Sunter","Jenis":"Software Office","Type":"Office 2019","Merk":"Microsoft","Model":2019,"Status":"in use"}]}}</script>
+<script id="logo-data" type="text/plain">iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAIAAAAErfB6AAB3GElEQVR42uX9Z7wtRbEGjFdV98yssOPJpEOSDBKUpIioICiSVLyK4TWD2WvOEfPVq2K4Jsw5YcCcMIAKqASJh3jOgZN2XnGmu+r90BO6Zy18v/y//bfnhzuuNTPdVV3heZ5CaxkBAAEAQAAQEECg+Cg/Q4D//E2oXqH+pf9fABAQFHRfSPE6/h/KuFf2X1QAEMu/FQAc+0aj1wDhJxC+++jv/OeH8B9e0L+1B74PCJ+8iKBbgOJFRQBx3F/BA1xq9bL5DwjLOyx+KO6Fyz9GEPR/nn+zflcgIFK+meTLAADFN1HEe6DivkIQDB9E+VflS7trEe977qZRAEEEsLhYQAARQf8PIP9xfrXV5Va3UP4UH2jjSnFJ/v2Of9CCwVMSGXcjMP5FEDG/Wv/3ZPRK8p/LWEvIryf/ARW/IQACiCCFfZSPpnoUEqyniHjvV24bbxny+xbJzba8eERE9xYi6N7R/de/PinfXsrrlfxHleFjfakQi6clvmkU+wnK5R/jprxnWV8HcbvHXUzdXqTaIhj+IWL5IPL3Re9OpLxGKa8K861a/mXgNoo/RsH8xYsbEe/KsTBaAYLKEeB/crz5Qy5sWQTRvYt4710+bu9CfQeBUDeEYjmKT8Q3r+CCsLjr4iWlPFHKW5dgsdDzD1i54GL5fe9Suftx7hiLG0eEYAWl+H65IaS6I/F+wV0oSn6y5KtbGKy3OytPI3W3W26R4niSYivUftG/cqDq+Mm3rXc0CgY7orjSastgufuk2vMSvok7Ib0rRBixAazt0FGLQt9HC4hIuUSe38fQU4m3qzF0Z7nxjOzl0ii8Pxf/R1JcIoZ3geWGlupBeScWlG6o2CTVwSWl7yyOLv9AKcwapdgi+Z36JiFeDBE4Fe2divkTRt/GBPP3Hl0wRP82BATLeECwulMUz1GVmxHze0R3j4Xjqj1xrHtCKW0bwyMpuD30V8s9vtquKi8/OPVLl4PBmYxQ3S+iv+mxMmEJPbV/SrlH6rxdHlwiFru08kdYP2Q9m5Pa7QRbv1ovP+zMv9LViuQ+VrwdgN5GRu/V8qMGR4M8kbpVenfqNqjIyHHun+HlBXsBByAKCEoVwuDIy5eeEjG8X8i3qG9y5bOCceZYusDx0VCZazzAn9fi6PLJASCioORxghS7qUwtXNhY2yJuF4kI1tbP309SBSTVO7vNw8x5zFs7U8NrD6zAXUrwsL1d7NlisaIMgIoI6T9lP///8yEi1loRIEJCqh5jmOFA6PLqllbLw8q/Ff8X0C2wl9f4fqByKfn6iwD65wNiafG1vSoszEIKiaj88fziys75pV3zS/OLnaWV7mCQGmOHWZZlxljLlkWEWSTM1oorkuIaiy/LU0jEuy3xfivf/6VLljDEleo2JUxoq9fAMmUQCYPrKqrCmsUiEYFWKo7jONJxpJvNxszUxMxUe/2aVRvWrV67eqZ0QSJijUVCyl8Gxyb+5ckZHvAj6X+1RYprYeb8MPBjCvdl6dq8ONlzjlV8kzstEUBkFhHRWrkf3r15+9XX3XbNDbffdPu9W+/ftbDc7Q8GxlhmKRxHvYBQ/I8hP+kwdwTuKVfnghTnI5fZUPmLgJ4DlDA7D7N+AQHhKuwR7xiBMvoR8eIAEMnfND+vQBC9jEWqLLzcJkRE2Ezi2emJPTesPeygfY8/+tCHH3fkoQft6y7SWisiiqi6ZgwD9fxaEceFHuFxJeVeQbbsx0f5wS/iWbMXH9WCE0HfpTALiCitAGDr9rlf/OHaX/7h2utvvmt+aUVEIq20VloREeWnex4Pil/bEiiNsAwnRYoDvLrCMt4TLp+8VBGAV64pTxkZVzgorF8kMF2pkm6UMumXynm4740eaeUWK31edU/MzJxZm6YZpykItKfaDz54v7NOe/i5jzv5kIP2BwAWYWsVUZD/VLW6srCAnmn5FuynEghSnsHFtRR+N9+9eVbgW21u1hhmj8KcW+31N9/1le//7ud/uGb7zoVI61Yz0ZqcEeTeonh3rB5k4D2gXKrCRY/xjyJ+JlEE2COG5qXfMhIUBd8pzL/2FkUmGF5Budtqzh3KTVg/DaDwK2W2DACZtf3+EIbD9tTEaY849vlPP+vM008GAGOts3kIC4y+x4BRs0WEcPeXQVa5MfJcL4hTPTdRmbB3S8ysSAHCbXdu+fgXf/LT317d7fUnWo0o0uLMGqHK8KpjtQisy8PMq2RWtii+ryituUhIq3qeSJntjdhhcfqKgJfoF9sBi/Wt1nzM4oQHuGfEEhZmQy8P5Rlf7gcREODyxYgQETNjB50egDzyxGNe/9JnPu60hwOAMabw2FKPzascw8sQvNC7Oj7YcnDahGlPreZdOeXiF61lrVV/MLzkiz/57Dd+vrjUmZmaIEWWbRkGoVd5EWEAyMNpAQAunQf6qxuYol+SkNqJWPtBYN7eIevbeq1r4dWIqtX1OwjFuxUm6K4Ow50oEqbr9beqNmZ5D/4NIioiAekud0DkqWef+r63vnSfvXc3xhARFgEilqsgo261jKKD8hYyc1GdwaCCUZRtyujJW9/8ZVlYK/XPG+94/XsvvfaGTdNTbaXIsoxUh4KtDbWSUn5V3okr1VMuH0pYjiltIb9pKb4VenvfHMc4+TzG9pdVQIIKc3A0F+/iVY7CC4Vaji9VdbDwD1y/LPb3ExORCPQWFtetX/ux97zqqU883Z1rSOhZZ7GiWDgy8AomXi5TBFllibz6Yy/BDQIr3weBUvSV7/32Hf/7jTTN2u1GZm25FuVJIFUkXJ1Z4bFerrq7ZPYXZMQYBEaWA8tTsXSklV8ON0RRW5A8OcSRtajaXOV7cnm++H4ir72Urrj07rVgLt/BXhhYJg/lvfuhpICA0mo4HJpu77Uve+YH3/FKAWBmIqryJYR6NgteoUfCBfajNSlLGuC9cc1viwAAEV38sW987NKfOMM1xpb+DhERqbJFv+mBYW/Q86th8iX1T/wIWbxifNl2FC/GlXosLcDuYvIjBsVbWQw8eeniPIfs5U1VXBVEBOWRLrX+lASVg/yl8osu9ll+EGB1D+LO5t7OufOfdMZXPv3uRiOx1hJRfTmCFQ0ijHwpqgUu91JRHPPSTc/ACtt9zcWf/+K3f7129TSzcFiGwLIUzpCniKWpFcUFr0QhQSxXWJqzj6qlKjWLH+mrVuUOkSDGktyIXAiP9SaqH3WD11wO/EVleuH7VVFBWHnyzRcw2I7FPUu4R8DfJ8V7a02dHXOnn/awH3zlw81Wi5kJqagZimeJUq+Tll0AtlzFY/nJVEMpoHcAiogopV578ec+/61frV8zayyHNYQyrCsaCiAUtEBljK+vzlf0glnB8qyrwh8/1vWKb95fhY+4aG0AAIe9muACqqanhGlbcM4GdRIsjwQJ4jrx17My6bLGXqwxeyWpYEtWZiwAoiPd3bHrcac/4rKvfVRp7Z6n19ipLVY9Xi4XuHTlUoMEeH1SYWat9Xs+/s3/+ewP1q+ZNdZ6DYKRlSsbuw+0wN6pIwhh1Cz1vNgrNARxD2BVhBQAFEQUdlUFK2yFLQAL82ilB5AQCYmQCJHcHfoumAsMQ812y+iL8yJJrQoiteJQkLdWNbmgH1EmepWzKJ6VjlR3+85nPOPcr3764iwzShEWjSwPZIV+Aav80GOQUwJBNl5cgWXRWn/7x1f87+cvW7dm1jJDngOFFQUI4RZVnIb1dfR9r1TZKvhwoaBdVHesuUNmd+qjALAxNktBjI500p5MJmaj9rROJihqko5AxcIsbKxJzaBj+stZZyntLZtB15pMAEFpUrrcMCgyUvwqq7pVFBi264LgQPJOP3o5W+6hvSUvC7ZSdbaxSHVFTGba69Z87Ws/POyg/d7wyudmWaa1xjJtqhoSYXOiCrJG+6kjLVIWVkrdfPvms577TuelOSwM1fd4vd+GJZxFyrJOVZ2oahQg7PqWYYM5rFb6DxEBAK3JbDZQhM2ZVZMbNrY37BvP7KFaq0FPCJAwiohYy3m8YIVZhIUzsRmnXdOdyxa39uc39xe2p50lESAdIynPoMtsJD96ch8rwbkQeC/xzuDqEGEv7q46KBVKwyt/VjmX5Bsr6/V/8/1Pn/KIh2ZZppWuGWF1dEBV0kK2tp4X5R34oGXKAtbaJ174nn/csGlyouUlu1gDkxU3U7VqwtajVEGGeN2bMI7OA9gKkFMGJ1IAo/LrN+lQbNaamV6998Ez+x3ZWLO/xNPWgBmmJu3bLBU2zvWKiLAVFmHLNm9dsQAAucSO0ErWSRe29Lbd1t1xdzbso4pIqZHKI5blrSLNCXsYIjUAaBVAsPgeOwjP8zjQT93ET6+UomGvf8B+e/39l19qt1sAEBzGXqGjfDoifh6MWB4CGHQfxTBHWv/fVy9/84e+sm71TGZtFZHVYIVBOil1XGkAR5EqwPE67FJWTWv1DfFfFpEoGw7Apqv22rjbESdN7X00NNZkqc36PZsNAVhQASpAJQBirTWGzVDYirUCJEDCLIhsDac9kw45G4oIICFpQmv788Odt3fuu2XYWSQVISkWrmA2QffBO1lERkLwILb2co0qLMQxSWFQkS9TsyjS3Z1zb3zdC9/7lpdmWaaVqlKeGoyhiLP8WnQt9y2cMzMRbdsxf9rT39LrD5TWI5eDZfpblNTRTzyK2NQzg9yWOU8bckQagCv0BDUrF5BX/pmUMmlq0t7ajftuPO70yX2PzbiZ9jo26yMi6QZQZE06WJnr7trc2XlPf9fmweL9aW/JDrtsUwBC0hQ3o+ZMNLk2mVofT61LJteqZFLYmH7HpD1mRoqUjkj6g/tvXrr3unTQVVGjVqv2HI/f8xhZ17BT6T87qaLIIMXCalXFi/PYtX9ihGt+/ZUDD9jXZcZjMluREpCjg2oL4iiKnVmUws984xfbdy2unp20RV4EXnoT9HTcOpWwpip2kqpoUh1f/l96IbGEkQsXTWrAwcrS1OrZ/U9+yuxBj7TQGnRX2CyQitTEamOyle13zt3+1523/W35vluGyzs57YMwIAERIFX12HxbMwBR0oon1rTW7jex2yGtdQfo1mpia4edrNcTQFp9yJpV+3S3XLe89SYBIh256kS9pllHiwbFm1r73I/Lsd4sqtd5xQMsi4hW1Jlb+OAnvvKFj7/D2V5uAuiXVt3x5QodRTFlTNFKhEWI6P7tc499xlv7g5SIRDgEkaN4Jllrv2KIoQ6QGcJY2GYAIwrWvIw/GIlMlokZ7PvQh+198tOwudugs8xmSCqmuN1f2XX/9b/fcu3lC3dem3UXkDRFDdIRkgakEUCBb1EsbNlkYgYAGLVXtTccPLXPsa21D0JSdthhawSUjiLp3r9419XD5TmKGq6kPIZwISN5fm48hTGGoRVWhRgXb2Ct7B2+THnFkij6x2++9qD99zbGKKUwgIQGuFXtO9LScZdBlrWslPrBL668f8f82lXTpjJfH7tWFOSw9jN/8+EYXIXn3ELigZdRgIAIKTXsdlpT7SPOev6qgx7V6wzMypxScTy9trdw/6bfffneK7/T2XYnKq0b7WR6fVVLQ9duQwyu1ovkQYQZVSxJC0RMNli888rFu/7aWrv/7AGntHc7jCg2w5W0P6Bk7apDTu9svnZ56y0UJUVk6h1IuUki1IvlZTCBAXC5oBmgb6lj8rJayQ0jrTtzc1/77uXvfONLrGXXbgoQeHmGVRY6QIrvYGCawoCQZuYJz37XrXdubiQxl7XckY6zh/GQAsMiVZ2v+qoCZoT4zbDJ5zl+RBp2lvc86KDDz3uptDcOu4soVjdn0sHKbb//2qbffqm7/R6VtHWjjUiAiKTQVTDc6mIRJFMZkoNlFuZilV3KZIv/Coi1aQ+saa47YPWhZzRW7yvZwJoBC8RJ0y7cOX/n1QCApEbb+l7MJKMZQi3Krqqdtf6EjCyyV+EjhGF/cPCD9r7mN19L4lhA3ElcwTTrzYbChee4mSKyM9ZGUXTl1f8+/8UfaLcS65x5lVMVYBYI6q3V2ovUoRN+EarstksNq101hdzlDrvLB5148oGPvyi1iR2soIpVY2Lzdb/513fft7DpX7o1qZM2ACIpUhqJEBWSAkQAciQZRZgZ7nRTEQRSILbdUHGsMsN5/46LNWab17+c6x52EHFq3xNnDzqVlLJpX5hV1ID+zsU7rrLWkNJSRNd+LT73umEZS8b4qOqEDveEjKsKVscWEqbd3m++/6lHP/KEdJjqSGO9o58/Pz3SNC5hHeKO5z/89cbhMJ1oJ1XLIWTllE2o3P9U6XZBD/NqLH7hCgVqYXWdAIE07C4efca5+z7meZ3lAZuObk2ZbPC3r775tl9+gUg3Vu3mlhaVVqRz2yUCVIVnRqVgYTldu2ryjEesOnTvqShJbr5j5xXXzm3d2Z1ua3aILnILzCKM1gobZsNIqjEtNlva9Of+zk2rjzi7MbvRDpbMYBnjmdmDTlnc9GeT9klFfr+/QsPxGLaaFEVsHKHtecib0Zyr3jZVRDLMfvHbKx/9yBMsWyWqqAugB1sTANR+8p7HXsWqKCJr7d+vuy1JtHdNVQFS6qlVgKGBoBQGtaJ8wIPx20BeZzHrLR13zlM3nvyslcUV5DSZXD133y1/+fTL5m65Jpleh0ojEumIVITl6iICqjL7VwSLK+kznnDw21544H4bG0ACVkD23bItfe/nb/nsDzdNtTWzCBAKADELIzGzQtZoLbMBJKXjtLuw7a9fWnXoGZN7Hs1Zn9NepuLp/R62dMefjUkJ1dgwuE5qk9EQlKEq6NWtHKtYW4JYHZFZIImu+Os/0zQlIhZWqMJeu3i1aPTJfRWOUGu9+b4dm+66L4njOmCx1rwNst783PUIIF4UXZJwymq1A0KL16AVAaRhZ/G4c56y9ynPWllYJrHx9Op7b/jDFR+9aLiy0Fy9Owii0sXqRkQq7xzk/BIUAE2wsJK++llHve81h0Cva5aHrnOOAHtOw6fedvge6yfe/n/XzU5Ght3mIhIWEmQlbJEsWiWkrc1UMsE2nbvhp6a3OHPAycjWpl1W8eTexy3deaWwRVIAVZfAZyY9wHEs9WRztGHzQDtGhEEoiW+545577926374bjbFSFLUkX8P8iKSiJIjFuhc1CBZAvP3u++cWV5RWLF5MnNOkUMJkf5SGIjmwRwqYRr53/C63hMRIESFSg87ygx91+r6Pfm53qUvAjZnZO/7+o9+8/5lm0G9MrQEgihKlG0onSiXOgok0kULSRAoQtaLFTvaYE/Z+338fYpa6JlWklCKKFGnCLIPhfP/NL9jnnEfuvrCSRpqQiEgp0qS0UpHSMelYRQnpWOmEVEQ6oeb00p1/mbvpl0AakTgbZNho7f5gEK4yGajTEkYcdcU8yOs6Xlt5DAUGx3RZRCTSenlx+dZNd5NSlm3VdsWA3kNBuxi9tFQEAG6/675hZtA/QCUgjOIYiilUbMQCIuwwFUHbMyxKl4+AlBp0O/sfeeQhZ7+ks9JHMY3pmU1X/fAPH7lIqThuTSIpFTWUTlSUkE5IR6Q0kS66fvlmtVZarcYHXnIo2CFwEWUWN0fIgMD94ftfdNDsVJKlFl1jjIhIISkkpZQmFSm3zFGidEwqUs3pzuZr52/+FaoIkTjtSjzdWLM/Z8NyU+c3WjJuq8fmnj1D+BxHLbTcK0U0G1Du3Q8IENLslk13u2pjQBD3mFtU+RLxVqaogt+9ebt4gIZ8DRC9JXThlEe0LUktAaGzqFsV8Cs/aCx7pIho0nRm7cyRT35Fb4CSDeKJ6bv/+es/fPQlOm7rRhtVrKKmihrOtkhpRI2oXKFKCoJ3pNTCSvaKpx18xOHNrJMRlRQpBrEgDCIKJe2lBzyo+aqn7bu4PNSE4gHKXDROpElFSmln0M5VqOZM977rl+68CnUCwpz11cxeemIt26xqIHh5g4cHFj/IFRllUdb4rziqzxA2KvHOe+4DCDgfPqS84AePlNPKB79zblEToAiOUgjzNJ/F2zJSshJEBGokFwwpxKMoRBER4OFDn3wRNzbYQTdqT22/+/rff/QlSjd0o4UUaZ1onRsTkUJQSDmtpzzwFGK3nz34kHWvfsZedqVPhCCMwgicd+uEBRiYlYJ0qf/yp+x59CEzK50hVcxbRMiBAESKVEQUkYqVjnM7bs2sbLm2u/V6VBGg2GwQr9oXKRKxpSvLaQpS2U3VoJBa8V+qzn3ZQhMOiAUgFTm5XAyibTvm2FoPeR1gPfJO2Sj5zcXqbMzSSkeNQiqx3jbBKusrufSCtU5hqLUgEBJBQJBUv7N8yMmPnTng4cPOIsXJsL90xSUvMf1+1JpCys9FV4BE0ogKHQvGJzSCAMgwk/e96JCJCcuZuwwGsCIWhEUsAINbY2FruN2Ei1+4X5rZyjw8FhkQISlSuccmFZNKUMUUt5fu+kva2UkUixmKiuLZfdhmHgVbAt4s+/lDyMH0oEUI5Nesa5IIiD4rBYBwYWEpS9N6jdSjnlD1TlgVMZxRDjPT7Q9JKb8dVvWuiu2EArlN1Fi74rMC/HO6wC366BjEbDBYtdu6/U65oLvSJ0RqNK780lsW7r61MbUaUSmdkIpRaRdGIbrmAUpYGYgUza9kTz1jn9MfPmGWMme+IOw6V8V/K9yMIugtDh//sNmnnr7H/NJQobPv8nHmpxESASmiiFREOlIUKZUgqeW7rrImRSQxGU2s1c1ZsZkPnkSRoJ0sQbM4t1QJIWDgIwh8QIuE4Y4A0WKnNximFRKojoMH8gB+Um0NERCx1qapqUJ4d+cey6+C61e7qkoSpOoX+TmAHylKLlkhIgDW9B58xtMgWcNZP5mc3vTH79zx+++2ZjcAIumIdEQ6JooAVbG0UsPhIkKamt3WTb37wkNkmJW0JmbOIVrORTMLFzfCDABmyO987j6rp2gwTMsLx0LmoUi9CBSRs2MdodIqmbD9+c7Wf4BOWNjaVE3t4TmAopIuKIVkRKiGIVBrWohzNh6mAFDK+/RUUPLnjjgYDLM0y8lhI0ehs2CnReC3ofN4y1prjCkgbexxO2SkXoGeBkohJ1PTRAkFPKQs6YkgYdbv7XnIEWsPfdSwu6Lj5vLc/dd+64Nxa5qUdrZLef5DWDHvsObMFOFS17zxWQfstSeYgRBiftu57XJ+BOdUOHcQCyL0+2b/PaPXPn1jZyVzRlwltZ4oEgLmHpu00jGSoqg12Llp2JkD1GAyTCZUc1Zs6lkglgIxvvOH8QJG8gAdhiD7Kkv8gJhlWWYyH91ZgL/zujj5nOBaLdwYm2Ym0AkIWwIFHsM7WLGUL5GCZlbG+LW832dVI6E9+JRzDcQENmo1r7vsY50d98XtaSRNKiYVodJIREQlDqnoEuUvSwRLK+nJx2543jlrzWKPyAWA4hqCwAyAwmKtLf1ZQQoWQukuZS85b69jD59e7qSK3ONhX+HIvZ0rhbrEjChCnSCp3tbr8hIvW9VeKxVILYRL5wbpOV4MNXIQi2QYfd5j0dwVAOTgoAVjTZaZGlbc6+zlUXSAwCr6YMAszDKiXlKuDUMBPmP3uQ8KrYFEA7sXzP1kTkRL+53dDjh4dr/j0u6Kbkxsv+Nft//hO83pNYhEKiLSSJqKAqTPfw4K4iwq0u+98ICIUgebFbZF4AwCwNZGETVibTMjYvMmkuTu2lhpxvjeC/dHEGZbZukhcxMBMW9mkMrdddzOOtvSpa2oErEpJpOUTInNqo6L1ygv22YYyh4VQk3iFRj8gmMp7ia+MhQAWivGWv+Zi4fTBKjyYI+DJP6Z7X9RRUpYULglP0ikRu4sMc9FR85Vs/Lvch6U5e1r4WzjsY8dWm1MBkrf9ItLbZqquIGkHR4KiQBRPB0zCNyIKIXzy+kLzt37+AfH6XJGKMXbuPCKma2K6a6tCzdu2hE3yJocMi3WABsQJoSlpcGpR7cvOG314tJQUYGSYQbh0MECABIRKkWugqbiwdydZVuJ2msKsof4wAcpiYGB8/e6tFLqKICMU/gLOxS5I3YRRggMRC9Nkko4B+rAV/HcNkN1NlWskBq/eTQEg4CSVf2wfGAmHc7uvseq/Y8ddFd0o73z3pvuvfrXjYlVCEiuhVDmQn7Q5l0pIfQHZv+N0298xh52ZYgozIV1WuN6f2ysnmi88v1XPON1PwOtQKzkK1dGYRbEdlcGb7pgjw2ro2Fq/DQvL8v65BzM+5JIpOKW7c2nKzuANNuM4inUDWEjECqIVZGhVCxyCZRHygeGIdVRKnIzhkpnkAeNpXOvaiRSpEkYlrFKfQKHJhcOiBd+M77GaHdIYQ9/JV5N0msneREFkk0HGw47DhuznKUUN+74yw+yXkcnTSx6RJBnRCNgh7Kuj9Ab2rc/d/81M5ylDMLg0JPWCjNbm6WmNd34/g/++dNf3X39jYuf+NLV7emGMRbcwjIzs1iLwt2BedCG+LVP27PbMYq8rDgsxFe82HyZNRKli5sFCERQadWYETYQaDBKcZxKPd8Z12NgAQ8W7QNo/L6cuKAkD8brQnlYBFleauZriCEioauIe0eFhyz0SfG+2/Hz7oIigFWTPw+TEAGEbRTrtQcen6VGxXF/aefmq38VNScBiUijyntEEEBSggetCBeXh48/afenPmZquDQkd7yzZWvYuga+iSLcuWP5le/7E2qiRvyOT157592LjYY2zrlZK5aZLTMrhLml9LmPXXXcYRPL3dzV1yJgEGBHY3fEDiJEQpWY7k5Ou4gEbCiZwDxakErKsMzpEEdEB6HeURS/nFsjAHnyqIghRBFCRkhVqvS6Cf6JLfXDx8MNuvxOxlBBYSSr9yVrS+wfiEmH07ttnNzwoGzQxbi99Za/rmy7x4FvkBSgQqSgpoO1No1kxrTbycXP2yhZn0Gc783/OZC74aSt3/TRK7ds6apmQrFenDev+d+/xTEWvyNFfizCYozEaN/2zN0QHHS6bFwjjrk3BCAABIrYptnKdkBizjBuiYqYTcVSKYVnMOdtSwmIrzjHvvaJlMqYfgFBggwCIFwvT0gxz4apwnJDDTbry/mheMxHkVCOMainSVDS8ClY4gWHRdPXmnR2n0NYNY3JBOD+665AJNKxQ0MiYqCdGWpFCYgiXFwxr/yvvQ/fD/odg3ls7nwuC9vM2MnJ+Be/2/SFb9+sJ9osilHrmYkfXn7nN392+8xknKZuQ1S7AkEWls2jjmg/7VGrllYyRRX+d6QlLkV67EhsOuvuKoB4ClRTrK03iKTiHqJf8gmLrf6OHmk41PWGMVQYEZ9RIXklq/J9If2/QCf6J0go7VzJLwTpcK0kV6PVVr1fIpja8+AsNUiqvzy/8/Z/6kbbOT5EQk8poPYIBIQQOr3swQfOvOLcVYPFAYKwtWydczZsrbVWISwv91/xgasEI9ERqAgpQtKYNN7wsWvv29mLNFoXahc7wyl4rXTS156/drdVajA0VJGpCt2nWkjr+k8q4uESZ13XMqS4nScOOR9JJGj5ygM10kt7KxpEUG50GQFZl8yAoCGFFUqW8mUMCMsSHgjga8pWnREvZAqyuMIHl66vkuYpqp3OAbE1UaPZXr2R04GKkoWtt/d2bdFxC5DyemSNWTWiU2uY3v3cvaeSNM3y9bHWWstsWdhmmZmY0O/+7LW33baoJxoCilREKhLUeqK1+Z7+2z/zz8l2lBkrtvxz97fc65u9ZuGV563p9aw75oLwHSvGtpSHMSoxqR2uACoUoSgRYWAbtPxLh4y1jovn/DCvYUPYoQspqsHRWBO2zWNwzEuVRfVYwrSs7FdjDUxS9Q98MSGWUi27zLKxRoeXKkQUETFZ2pxdF0+sMcOBoFrYfKvNMtQRgAusqCa/LVXnXLTChZXs/FPWPOGh0dJyhijWUcrcP+bM2MlW9JdrNn/8qzeqibZAXpdAFaGKALSenbz0B3f++qotU02VZibPJtmyNcKGkOeWhk9/5MTxBzdXOoZQgPN6LwcKEt46kQIkO+wAErMFFQuS5FgLCRLJoKVUAN3E1zgIK2BVTFk+Awky5HA8gh+JkS+cM0pdEV+SpMLRIdRhGZ7AW+VFw9TCP41EAICztLl6A+jEGsOWl7beiqqERaIXONZjPNdUWLe6+dZnrBt0+yLClsW69NeRBw2CZFn63x/+e5YpinRR8sxbfqgiimLG+LWX/KvbSxGFrXGBtMus2FprWSG//vxZQuaSP17oS3hOzZkvubSDhytuUVFFgErE5o7LbxSWeOyRoLemxusnpQJV9RBGKSOVSFqRLQuACAVy42ORgRJu1kL1qqw5e46Gq2weH+ClAiEjTmbWGwsiwCbr7dhCKi6wc3UZc//PiGC5Z199/voDN3CnbyG3XWbLbK0wZ5mdbqmPfv3Gq/+xK5pqMSgkreNEUAlAFCdIWlDHU+0bb1y+5PubZto6TY3jhhfoaIPAiyvpIw6Jn3Ly5ErehPDB+zWhEAREIOVYioV4MDEXEABhr17v94J9inGgJyE1qrVPFKlRRuuqRCVwCilwBSMcHvE6P3lmVHWUWKoA29MScHdSdb6q1q8ff4sAsI3aq5gZCdNeZ7C8S+kYq+kHGAguF1uECFa69sQjZp5/amthYaiwjI8ss2VrjbGthrr+tl3v/8KNqt0WIFJxFDd6nX6z0Wy3Jzsr3ThOSMUAWs1M/O83Nv3r1rl2g6x1xHBbNJ+YAJY7w5c/fmL9LA1Ti8BQCl2NMAMREEgJG7ZZ8S0Cv6AX1HgkUGWpBaael/biKwQ/5sR6pjOqPwYAVKq34Qh+Lwi0PFc8pliFFbak+GDwjh6pVzJZhAVBNSbFMgsOe0tpd4mUhgAANKJ447D7hG+9YF2CWWYhr0VZttaysdZaYy2Jed0n/tXpAMYaSSsd9ZY6hx+0/2++939/+vHnjzvq0JXFro5i0lrHcbdDb7n0ViI0lvPuIjtJZxGQ3lD2XK1eetbsoGdodHRLLiLkzJfQ+WSbFZEn5W3W2o2MKMV5jVQMeqtV91YQBWrqUfWeqT/xosiDETx585EVxqBEJYH0j/998IMuBw1wcDxvvcujOmcRWEBS8YQ1mQCkvRWbDVEpP/FDX9pa8o7vwoq54LQ1pxyCCysWQfLjsvi/YWpm2uqLP9n0mz9u1zOTgNoKDpaWXvC8//rLr7/5kKMPO/Tg/a+4/EuveflzuovLacaoknjV5O+vnP/Gr++dbkdpxmyLvjELW0aAuWXzlIc3jjog7vQMofi6GhJMi3Feh4VtNWTEVbxLYawqkA6impq7HMG/1TVxyh+OPVb9c5rKCmQFkwuPAQl1RKVCLnGVKlR8IgkFWfz4z1fzZhFGUoARG8NWskEPmBFVOXAnwFzmtXEYpHavDY3XnDu5sjKAKvF1FszG2EZEd21ZfOdn/03NhJQWUGunp77+5Y9/9mPvnmg3B8O01x8Q4Yfe9coffOWje+623giRiqiZvO8rm+7f1Ys0mioSZ7YslrPMkjWvOnuavEMGS3ZVZZ9cnF1WciyDQwvJaIfON4uqjyCe7lAI2HEMVPHDZpFgJaVmmFLgoj09SRwZxpT3oSorZq+HEKjs1pq+CAK1jVqdM9UjsSzOqTKb0bjMh08BMCL3BvyaJ63eczLtDfOSc+6drWFrrOVGjG/9zI27dmWqERljpyYmfv3jr1xw/tmDQZoZi4iNRqJ1tLS8ct7Zp/75Z1/eY93qLDVxu7ltG3/wm3e2Ekozay1bU/kFYF5YMSc+SJ99fKvTKeselVKUL4mEPiCcja+iMvovp6KLjKceBhFV6F0Fq6jMOyUxnJTiatG1XkXwciJhz1uwwMr6ZWgeKVJC4Itw3AgbEWDmLHOhjdM/9ETpIaDrgBDhUid7xJGT/3ViNL9sCYQtF+7ZiuU0tVMt9b3f3PXD39ynp9sAmgUnJpr7bNzTGOuQ71rR1q3333LrrdNTk91ub7f1a2anWtayYKRn2t/45bbfXbNjskHG5OVOW+w+EV7pphed2lg1CWlmMUQnhUJSBW9YrLjDWAQ8/eB6bhDOkBNfJSJoshcKCEDFISgjWq8eD7HIvAhKmp/UhbFKOos8UFpdZb4ScKtLV4Zj6tpQCd0ak/ZFgK0VUOBRuPyepzvN2HKSxG86fxbNkBnyZNUwGxZmyxxp2jHXfdtn/o1RDEigNJCy1g6GA3I9JitKqR07tp/y6LO+/8OfNhqNXq9vrHGUYlJaMLr4a3f1hxYrGTXnIywwd4d2jxl+3qMbw75FZK96UYNbUX7/1uQIyxER2pE4BysX743TqLWVPNUFH2FVD7RCyCbQmHYkYl1HpK4WWbP4WljpqYJKUK2oJXBiTTboCovJUoqaFDWkEqYO6BBK4UIne/ZjZ47bV5Z6DJCnvFx46DSzrQTf++Wbt94/VK2GoEZ0ZEMFgOxRMyba7Z3btn/uS99yenFF5oOCKpps3rJp+LnLt0w1Mc3Koge75jKCLHTsk46LDt1Ivb5VKGUDIuyH5JRzYCs2LaNZHIPOGFeuCpYJfX+KnipxkSnVOIkl9KrqK1CFYMOqAF52iEpDFC/cgVC1T0b0L4JynHANMOTbf9pdYhY2BnVDxc2iaOpLIwqi9AbmwL3bLz2jubg0dMISRQ/XWuYss5Mt9eu/bf3az7aoiZaAQqVR5YRSCdUDrbVI8fTsbF4xdR09RCAtoNVk6zM/uf/6O1aaEbmqdtGbsmLZGFYoL3psE6VIp6oqVLkYBKQAQGwqnMG4yDhEecDoLAkPXy4SKKJ6hRUpIDfe+BGvLl22C2uFaD/0r4mp+zC0AshW7x9hTafB/ePRaXzuo7+001hrTSqodHOa2YZVUvf3PMjktU+eXZ0MhymLtUVs5XJfgyi93vCdl94mGIFSQApRk9I5z78IF7iozQiSMY7YX4puUS4FEOv+QH/we1uJxFgpVtgF6gbELnXNiQ+SM45Uva5VNC5+JYWoAYDTLrAtpH2katTkrdOapEmtl4QebxhH9NWCEzvoTlXDGQuYr68AFGhZYl1mRQo+itQgw1KX3MnBYGNKNjXoNQ4X7mdrrbGCKp5aJ9b46bWwEOFix5z20IkzD+f55QyhgNjkViyp4akWffw7t916R0e1E6CYVKSj2IrDPGO5tF5vSyotAUIQNsZqrVFpwVhPtf7yz5Xv/3H7VAOzwlELWyeAiGJ7vex5j6SZNmcph9UpBGFQkTuGbX+pkN31/4mE9blSFMtDbAR4vKq44k3mrHA79b5ljaXoswuDsxrr5TMJBlEGyXaFFRvR+0OCiqJSy8CASA8X77PpQJjFcmNmD3GV25L3gWKsTE1Erz27nfVTZijO3dyyMsuthr7mpvnP/HArtRoiRErrKOmv9GemZqanZ0xOW2GuUO9VcujQPUmjsW52qre4rHSklAIkajQ+8aMdOxbTWLtwq0SIMAj3hnbPWXjmSTrtG8obY+UTYVQJuoLlYAlI1xUcGMYMgREI6gcOGoveuS3hnkDwhprm3ehwol9O4HYWHMxr8TAa4FN3/VRuTDwYjAYNaD1Fs8X3HblWL6pouLxruDIHqNikzdV7oYoK5J6wCKEsdc0LHjd12Hq73OdC1Mo1FHK8jTXZOy69Nc0Io1jFDcvQ37XzjNMe9vsf/t+eu+82TDMBYIfxLsG7mGd6Ds6bJNH3vvjhp//Xmf3F5cyIjhqq2dg5jx//0X2tGIzN/8yFXGJZISx2+byH6gP3xMHAEhb1ORARRt0AIhl2OO0iqSCBkLF8YBmFdfhWJAGQJER2jmS3EmK2vDSpGPpbT1OKuvuIpXrUlHGzcTwB7gfQcRNApWzW6+24Cyiyab8xvT5qzbC1ecsIodu3D94vefYj9PxyCiDGsDFiTX4oppmdbqsv/+yea/+9pNoJkM46w+nJ6Us+dvHl3/3sAfvv3V1ZoBxWyiVagwvf5rRnEWTQXZmdnf7iJ9/7hU++a8Pq2cFSh0GpifjHf1n8y7+XJxpFjZoLeKqItRJh9tyTlYPkFnwEBkGMW4hoe3MgBlABAlYzZkZKhP6XoyXi2g9k3PRxhBEODHjxde6sSq6x1A/+OoHbwyVwiDwRf45w7aAOiJTevEsCgeX7bhYRmw6oMdVYuy+btAz0rMArz2o1YZiaqiXoCpOZsUmEt96z9PHv3UuNBhDxoH/6aY+46tffeOlF/89gmPZ6A+Chaw1x1WxiN8dJXCjOzGwRwRiza37xvLMe+7PvfPKJ55yKWUZKi0o++uNdvYEBgDwhdoB9FhBZ6NgT9uOTD8Fhj6kQkEYVk26KGdrODqCqrv7ATZycDxNMqZICoiijGtkjM2tKuj1iyJeQ4gwOhKyDinYFj6uTUaDQB5VR9T4JACijKrv+kAZROu5svWnYXXAKsK21+7Ed5uo4nezM41unHAALK8bhNfI+fFG90ijv+eqmlRXQrabtDh/z6FN+8eOvPGi/fZaWO26wJ0Iek1mudkaudoDgXs81p9w17dw1Nz09demn3//Es07NOv14auL2e+w3r5ifbGBm80AtX2MREOgP7XNOknbTGsMIAmxQxRi1bH+RB0tAkQevKtrA/khn78F6M9mlAp0GwUttVljYX5cHtEvyqKcy0kxGCQAjJU3PKyqPiAKE06gQfD5iKCGMIqTjdHlbd9sdqCIz6LTX7a8aU2zTNOM10+plp0eD3hCgcMuc461Sw1Mt/f0/bL3imgU12RDQILh67WoAWOl0FRELu6O/THQcjcVaNpyDIpwFu8dhrTjl1n5/MBimq2YnwVoAolb0td8t3r6lFytwu8HpilsWQOgNYe9V8pRj2fRSclKvzVlAMYub3b4Z4ZaBH7n6Syf1ySNQb0xIrVQio8QSCJs8udJYBWbz/ATmPZ2AlCTjPQZCXWxS6ruMIZSDDtJGAFy655/CFiSzLNYyiu30zYVnTOw7nXWG+a4q4XDWsibYur374W/fg3EihZKsyYxjYzBzHjZAUQphsSKmwLf7P3ANFWutw1YCAjOk6cDxqzHSvYH+5M/nNIHlEpUFDi1PhMs9OetI3GsdZKkQCsUTtjdnO9tBJ66khVAx5kL04tjKJdbwZyiCo6VG7+zGqnw5GsJhIaNUalZJTfKnOi2r4BkLFhP6Rz+O8SGVjXt1W2++KBABgoqS7n03DPvLqjmz7Zpvm+X7uik95MDkqcfiQsdS3vHlsnVkjG1G8pHv3j23wNSIBBWiglwny6GnpCCk5NZS/DG7YMkF6TbnTjrtrDyAKkw83+UCSk00/npT+pvrOlMtMrbQwyssLDXS1PDcR2hOUwcGNUv3O/WMHKhVHo3oFEFhnN4K1ENVqCFra38RqCaEg5WrFgTkqMpKE6Qk3kINVIWh4EZl6lipi4jUZKECpYQKnBCCQBBQxU3TnVu562+9bbcu3XUtxk3k4SvPTMgOjc2Nxlm2c87tpvrV33f89C9zaqLBkEseAZLrbVrXJOB8oV090rrvlyStfNXzmBqKVNkaNpYtc3WRpAUVxslnf7U0v2wUAedsYwelY0JYHshD986O3XeQxXuBWLu0GVQEbs+FsUxuiw6eBzBOIFAKdu2obkOtyjCCesNxFp7nwTgW2lZjm2PJGi2G1VXk7rDHWeUAPgzL+w3x6U8IoBvthU1Xbb7iM0pJ1qennDxx/EZZ7jGwtabsKHBmGVHml4cf+s5mVFpy2TMNpHOZ8Zzum4dT5RSM8hAuOzGuoG2sa7oRMxtrjbX56jqRwYI+Q4145xx88bcLDQ3GcI47Y1vkC5wZee7JSauB2fZbUBgKXUVACjymP86mABZKKSaNfqEwx1rXSlOVSlUAaBL0VAVz6y2MKud1jRSzvPG+ACELlNEjno0Mmy+6CwFQuzDcPMAp8Vr51SvdsIOltLNLoLlhvb7o1NbySlpwxNkUvXdjuB3Dpy67977thpqJgELS4AQVVGSsLcog+T9XtOHcwzv7tsbm5W5j2c19QnQ0ajHOVbALuBTlrDItqKgd/+ya/vV39dqJY0JAWfsghKGBvdfgE/a5085voyjJ6ZDoZJwxaAmB/KfeQrHYWAc/jxSfqxhb6oEcBEx/qmCciHWNcQmguOU5WtYKKtqWU0uolO18+K5HMgap8U0dgxQQSUVxa4YlfvnZ06uTtJ8WnpnB9X2N4WaMV964+IMr5lWrwaBQRUBK6ZhFbHdl1ewqEDAFDMNN2AApzmPLltlYMZYBiQUzY4vxBGLZ4fWsMTbLTLPV5nRorJBSgIikUUeMyed+1y1IqcJcRb/kaltHmj13T2wGpLzVJfIk4yAE73hxcjnEIhzhF6i05LkWhpKHGCoylYNksWA2VMxkGZkyWiIgK3C7P67PW18p1bRH4Sej45U9ZKhrd5HWUb8rJx4ze/oRjZ2LmcN6pJnNUpNl7GA0g4H5yPc2MyjRunSDw6WOGQxe8boXv+0NL9s5v2CtHaZpmmXD4ZDZAMgwzTKTDdMsTdN0mFrLQJSlg+EwzYxxPIb+YJhlWZpmzLxj59yTn/zEF7/6pQlBurCYj27BSLWTW+7hH/69O9Gg/pAti2ExLJnhzEiacRLjM05KQAhQIaAAhfDQep8gaA9XzZwgeEUMjLUQU6iNKsKxuqVONlhXVEMcgzSoi0MXUqaCUoPzYHniekN5wwM3mKHsCUwjEmUZr1uXvP2JjZay1NYurXCddgEWwYZWH/nevXdsTtVEk8FpfysNcubZp73jza886vADBqnNjAGBsqxBCEqpVbMzjWbLGJsZ22q3ZpaWIBvEmqZnZoCIiBBwcmpqcmqqkTnCMGeGX/mKF5/5+NM/9dmv/uGq64bpABSAZWpE3/pz54QDor3XJ2nG4RNAK3DKoclf78Q/3CS6SVzIZgqij5UKej3+0HJ/oaq5yOjcNoJPxcXQrMUfrucJCeSC4OLFxWNnBYQhXDhA3RuaXLyohKmSDw4Xqb7w5pETkBW111r80/VLP1vuq4JYKUXlWJHML5tv/nERmzE74QSl2cr+B+570gkP/s1vfvnjH1/m/J8LrYwVZrO0tDww8rlLv0yENstYII6jHdu3QRTdvWX7pz/96U6ns7C4xEjf/Na3G3FkTJqH30giiIoOP2S/bTt2/fPGTaQVM0Gku1394Z8uPfrwZJi60C0XZgERK6AJ20qhTiQvJaAgViRYrE1aDRTQcXR8X6DT4C8t+4Nk/RHEUE1IKN4zn3wG1SxuZjbGMNtut3/G019/5+ZtjSSWMTE2il/S8ilzoS44esPB/M1b4QKYAWy/P8wWFyHrQNYHJzgYzK4HaDZBa6IYVERKI2kGtHM7wHQAGMBUAAQgAILJtagTWVoAHgJkAArAAhDMbIAshe4SAMLkDEaxLC2ATQHS4h0JQAEoiCZgalbHDQBHecqAM+n3oN8HYO/tygcbQdLEiUlHUgXKCUsVvesB5lFjYNwi4nfpPV3BYgSICBACD9ONe2345Xc+MbtqNomTRiPRUZSPhM8fOepqhHSpJ+2TJhBh/Af6TIWREad1sVFffzQcGFuMzmOJNerphkmtGBI2wCFiBImRgCLINbOUe3K0ZjXYGbEZiPWTbFSRoAYkWr1OOK3ARkgsgEmTGk0XsyAirlorZujUdKqGJ0WoY4Bi7jYSKg0i2EgwQrFZpZxblgVJi4rH4FhrMEoI5vZWLH7/bAuqzThG2tJTdhpH0ctfXHsEJvQB1w7JUq251BNun8YigSeR0UTAn6BTTM0KJNUAUZAENVAiBAwKkIMhlw5BR7lGlStdgbAwCqAg5ZNj8pY2AjjsjhJhxqhUac6lggE5DwCUY3sKRgI2LCQhsSDlYWBe01GO14ICGopGamGBVLL9gwHbgcKuoGDIUijQcLWxeEUoW7hXBJBxTlyCAnNdNLaU9IcRUXKpQTYkSLHqvcpc8paKrAC8+WqBjGEFgAgm6pIgIwihUmSNtiblopJQNMQQAJTWpDSiQqUhp8bkomcOBlDKxBaVGALQRAxsq2nr5QTyilakVD5pl6tLR4VEAGSxZHq5yYYkpMBNJg7EJhEQlNKkNSAC5aVKLGYdEqK1UE1pkWLYVI0+6Fl6qdCONbgzCNTVmgOWfPljPTJWtqqjSTVbM9+lMiqP5fkVy3ZlaQlII+bFjKKmC3WpFl80vOgfMwuYDEwGwhCrRtIUYWutR4WktNcF0wOdFJ3siswYTbaJ8sQac8NwcwxIgIGV+A/F15wSUUoNez0Y9AAJuDBKImALUUNPTuZTZd0+EwIkJLfAQQaIRDaztjuEKAYEQHY11PyJWUvtpODZ5gOocFzeUxlJJf4yBvUU0BCxLvbhpknqACiCHmrOlzgso2OEUL68dDLSHwwO3Hv397zhzVKNHw4VrHEMRtSfEGWt7fWHW7Zuu+Hm2666+ro7Nt0DiprtFlsWACJMu90Ln/vURzzs2MwwETm2khtrP7+49Jb3ftJYVoo4uGpyWR0owloUUJCklcL+4uI5Zz/2iWc+ajhMsejxMbNWavN9O979sS8WlGVxM11dm4dQVRPqhAmBU957r5k3PmvfiYbO0zsEEbTWJkl0+5bBe760yQbIVg/ohGNmjI1bUvQtFMfRkiq8nlRzk2BcyxjBpby1sffVLL6CV4JoLU9Pth7/2JPh/xcfy8srv/ztXz748Uuvufam5qoZsVYp4iw79RHHPfmJZ479E030ste8t71mjVjjc90RfNC4iK9TJaK16i13jjryoK984l1T05MO7+GOJGNtHMfXXf/vd33oU9CY8DCm6FD1IlwQPxiBgIBt+r8vO+i8U9dmS6kiB89nEGRAa7l9ysxNm3Z+5/Lt0WyjmNA7PisKiHq+mFEFcQ7PwYDEn7tMFwXoqvwtOIIC88aCAo5EeOCL7CCiZbbGVPMEvGlrflpfywgDj1RMbpiYnDj/vDPOOfMx7/6fz138P59pTbSINCQTnV5qrO12+1qpQCpb5KUvvOCa627+8td/Mrl6JjMWKiRU4eQKXfpyeyOCyez09NQXLnlP0mzs2DWviMrKgbXcnmjPLy4Lm1x2OI+6S/9OZeJCCtLl9PGn7X3WCbM7NneUVo4iW4raGsu9bv9VT979p39ZGGQWCEEoiJo8NgeOk6YsVezyeb0FrVu8p1xOzy73AoWRO9Zweq7kWqK1C9roCFsJwEUcSiulFCnSSuUq+ERKoSLlfqS0UiqfYFP8y7/j1D21VqTQGjsYDBHx3W968bvecFGv01daARulMH9lpXT+kqQVEeFgmH78fa874vD9uyudcvkhL956wDAHX8oDc0qXFz/yrlccc+QhKyudOIrIXX0u4e8+QRDrhjEIemzRigSCQGQZGxP6nc/c3WSGNAFbYIPACIIowJaAe6kcsc/E0x+7lleGihDqcGLxxXzGNI3rqBuBEcCmBIaYF/r9fqCMIcBVdaqiHDqOKMciOS9BQlEIRFuQEHIwVfVJ/lH0i6wxLpdFBFBKWeZeb/DW173o7CecurzcATFsDdQ1iRz2gkxmJiYnLv34O1uNxFjH1PZRaoGKq4CQUr35pWc+/ZznXHDu/MKS1rpKTbjsq7hRlplTssSyXyAFqVLcoCe0K9lzzt34kP0aSyspFhAFazhLM2vyL0FkYbH3oiesm10X22GG+ZNkH5SDoUZ4UFXwVTLrJ2ktsMayNkr5KNI6WyXsGHptexhpekkNABbqRiCizj9U/v+RjsKPOHb/4iSJEUmKOXpUWNvrXnyBpmKs9Egn3L03KVpZ6T70mMP/552vHCwuuUi+Vjwr2xyKsL/SPfTwAz568etWOl30U0DxeNn5FzbvuNQH9QEgEqJJee0ezVeft2FpJXWHt2U2llk4Umiy1LJlY9mabj/dezU993HruJsWXVsoGre+klleuHIOAEPAU6jJM06GyA9NQpUdqQVk1ZzdfNRDmeRgHnYXAqpVyu8NNyTELMte9do33rdlq45iCfaN3xEGZp6cbJ94wrHPfMYFUZxYYx3rRClK0+yhRx9++AF7/OMv1yhFEA409WqxorVaXule+Jzz/3jl1d/49uUTa9dmxiLW56wTABubKPjMh940NTWxuLSilPLk56XQOYfR4g6MTJtEhdw3r7pwv42rZMeiUZjLoSJBf2i33L98wJ4TwyzX7CaAhaX+//OY2a//evv2eUOxLrLzUou9Lp2DJeXYq/X7U0bHwrEKh4W62hO1SD1vl0sIyPFEs8IIgUP2d4mgt9Z+5/s/2bHlNoAGAI9kon6oRF+69LOX/ejy73/3m8WoFwQAY2271XjIUYf9449/RsSg/VaWcj02dK8/+Pj73/iP62+57a77G+2mdWkTVtRIVGqwsPz+d//3SSces3PXvNZafGCTB3gqRP9RAoVOT26bIOtlhxwy8ezHTM8tpggO8iep4dUzybd+cdcl37r5j589VVhsDg+CLOM1U9ELn7D+XZ+5FxsabDmUCouYeCTEEkGpEF0yUt/Ileg9idJyYDdV9DUcX1xkKLlu4dQ2kEqIsXo+EqiTAiDi7OyMilZH02v15Do9uVZNrlOT69Tkej21Vk2uU1Pr9dQ6NbVeT66Jpvb6+eU//cMVf0ziyDL7VdINa6fLZkAokJuPHClVvNI0m101+7mPvl2jtcZgIJ8qSqv+wuITnnDKq178rF1zi0op9+RFwCEr2dNclVDaaKyspIi86YK92spkpsAWWKtJtu1cvuTbt9y9pfOtX93dbmDq/LSxADK/NDz/pKm9923YXqFYXPp/H4SOGDKNajRiPztCn6VWjptxbRMPPI3hlFP22lhSjWkLFJ6qZzDCwihAC9aKFbKgLGqD2qJi0ha1hchiZEEbUAzKgBIVKTV537Ydrs7gceMh0gSQjcrIIEKkdRRFkq+TaK2WlpZPOvEhb3/9C4fz86SoJOAQYtof7LHX+kve9/r+cOjxWxkEkkZSEpa4BK+EhEQf/K0Is0766BNXn/XQ1vzSEICtsdaYYZq1G3jJt2+9e/MyRcnHv3vHjrmeQrbWWGOtscOhbSm+8HFrxOnK59pbeT8fawIdUpHNcGwD1xuh4dfAEEtukq9wGiis+UgECXUTSxWSUscwmHsVlN9IA0WoYooaUdKOGm33X91o5Z8nEzppRY2WYGQt77vP3jlqtcKQwK5dC1DokJXXwZYbSfLDy3546623xklsrXWNKSJaWFx53ctfcNY5p/XmF7UmEM7BoVl2yfvfuMfuG/q9fvkWLIIEP/7Rj2w+4CKHGrOP+gUI5WKBmaOmfuP567P+gFmcbkuamUZM/7pl7guX3UNxi+Joy9b+l39+T7tBw9RYY6wxInZ+cXDG0c0DH9QwTpqpGC5QUyjyqhPozdrwuWDiKSGMpM7F9NEqbgtLXlgbohLQXDyjrg8BCnojklfzo8QyZsu9bKmXLq5kiyvZYidb7GRLnWxpJVvsZMsDu7D0nAufc9LDTuj1h+TCaRBAZOYbb7rNwR/9JMkyE+E//nXDhRe+VGvlKpclS2CYZp/4wBv32H31oNtViFrp4cLSa17+7HPOOGVuYVEp7X43y8yaNau++KWvfvyST7babTd3hyuiitQkKpwhaALTMU87fd1D9qHFjhEHybcOl8/v/+ot/T5jrK0gxsmll9937/2dCMUYw9aKNZmxsWQXPW4WnKZ0pS/rN1/HML4l5BqGOqBjUmcdCngU+tBljVs8+Dp6tepAcEmC2Ure4ufVQlIQJVmabVi76snnPG56ytXuxUvDQITbrdYxRx566qNOyozJB8gIiEgSR3feedc1/7wesGUL7qGPKlm/fv3f/nrFO9/1nne+/S275hZcRouI3V5vw4b1n/zQW5707NeijnsLcyeddMxb/vsFuxaWiJTbB8aYVqt13XXXv+2t7zj+xIcrghxvC05nBdgzqjLCc6nRqvWNl505u7Q4YJtDSY2Vqba+/I9bfn3lDmq1rRAgqkQtzKef++nmN1+wb7fPikBYSGRxxTzqUH30oY1/3jxQrYjFEx2v2v3eukhtXilWhZvaumLe4C/ahVJV/ALSuZdbCIZ9SiwlR0vhFAzrnJVEjCJCY9dvWP/7H3/54IP2/89V6G5v4EcLJssm2s0vfOmry9u2Q9ysoYbyuDQdEOl3v+t9xxxzzNlnPX7XrgWtFYsopeYXFs8+8zGvf8X/8953fHTtfhs/9cE3OwClUuT2CJEyJnvhhS/pd+eTJLKWq4BRagrqVcUWEe3AXvT03TZOpjsXjTvl3VZYXs4+8PVNoGIgAlCAxADYxm//bseTHr5mz/WNwdAiQI4ZzbIXPHb6xbf03UzvQr1M/NlIZQSAiHXqTxE915fYszoa0dfxecZSotzBZ3hjlSCXimoSIk58pTAkLf2lT3zwzQcftP9Kp9ftDbq9frfb7xT/Vjq9lU5veaW70umVdTEQSdN0ZmbqX9ff8MlPfl5NzYA1ZarKFY/NAa4jTKYvfNF/3377pkazaYx1P9dK7ZpbfP0rnv/I0054++suPOig/Tu9HiE6GHyWmZnp6be+/d3X/O1qxIksS8v1Fa/fXvSR8lUmxKxv9n9Q8+kPb8wtDjGPrWya2okGffGn92y6p6eaMYMC0kBKSJFWgx5+9uf3xyTGVMDexY49dl/9sAe3uGuIxNfKqCbUjfAPxurwBHNBEUsYAEFAjZKK1lLImOMDCtAFPXxvsCd4kZcorXft2nnBc5/xpHMf1+sP4jjSef1ZaZ3Xk119WilFhDmTyNo0y2Znpu666+6nPOXpK52hShqlplwJ0/WCEopaze1btz7vhS/Ne7fFHrBsU2O+funHnnz26bvmFhTlNY0szVavWvWtb3/n/z7xqWhyrQgh6VLHWQrd2YK/5JWSUMTKf5+zZoLSYZarwWTGaiV33Lv42R9voaRZrq5D3TIommj87G8rf795MdHipD/YsrAM+sPnPLqt4lzZwA9zPY0mT1wW6zr4EiI9SroE+GoV48hudb0qqardUsEDJJRXKqQRnBUQ0Uqnc8xh+3/4PW8eDIZsrTEmMybLjLHGZCYzmRuvmBn3EysCOoqmpyZmZqZ+8pOfPurUM2+/7R5qT7AAIIXz8/zBM2QZ9ez6P//hT29/13tXzc64iX4OlZmlmVLKscrcyhljWq3mbbfd9upXvRbjthTutKxv5AQny5aDsEYpzLrmYcdMnHGEXlgxCJIZaw2nmU2IP/GDe5ZXBONISCutlc53L+pIxTFY/MLPtwKDKcjnILzStYdvkMc8pMU9QyiFiofUjuFysp3U5XbAhy9Cjd9d9IPLxFlQ6q0GCcAk7IGxy1SN/WipCO+diAMT0je/+oVVq2YBACD5/+wEDwbp/fff/7e//f3r3/z2T3/0M1AJTc6yAKGqBBZD+E++U0lba/TMho/8zyXHHH3kE887b25uLtKuIgbWegNFBZCUCF/0opfN71pUk6sECNzrF1XGnCMq7NqX5W2x5aihXnXWTNrtGYsubreWWw111Q3zP/rzPLWaFhBJ2x4AMhBBzkplQPzLdf3f/mvh0UdOLXUtFkKlnZ55xkmtK64bZMYiqbwVWA7DGINnHC9IO9J8hQL4LjAGmSc16VDwFblGpM/87K36fbacNBof/sj/bt1yn9ZaPCJN3SUgZmm6a35hy9b777jz7oUd2wAI27OAxICoYiTK9bVdEoPsVR9yiJ0TS8Wk/fJXvPaIww/ba6+N3W7XYT8K386AYIxZvXr1m9781r9d+Sc9uZsRUKSBtCA5cigV9Q7O2WkFFZMgW8mecsaqI3ezuxYN5frRYK3NUvnoD7Ywa6WISLPl8x677sH7JsYKYT5hTWyGIjOrdH9ocs4IO0lq2HcVPOH41vd/u6wmiXPyQN4FchEAjmIyinCvCBE8KiNWFU8dis+hP4W6xvEFqdFYq6IS+qDJYgC1Q+dbYz52yed2bbsTIBpJ7EbHNBFABFGi2quBiAXFTXPPDzNyTQ0WRkbIe5QOW5sPAhCx1Jqc37nzope86ieXfQsQcxp/UeVJ02zN6tU//OFln/zYJ1R7vREBiorzkvLwh8Ql2cX8VYdDRpvamdXqBY9qLi4PWYANO5D9zIT6zu/v/9ctXTXRBCLuw1OfsO4dT5ro9tkRn6xVbFGECCHNuDtgLHl6IACw1M2eclz863/QSp9BY/EQpSIlyliVDygFOopQ0P1lCahAPaaf6AdqiIGsClbiuQGbH8UnhpY1c3f1a9auXdy1SK0WB4pBMoYEnQMQwTqjVAX9lzQ6Jj9gzhFFcbUkZs5TVCQkAUC2Rq9ae9Uf//i2d7znQx94z44dO0kpd1GGudVq3X7Hpte85k0Yt8XtG9IuFHKFFGtzBTcWcazxIglmO4DnPnntHpNm5yI7gJ+1QgjbdqWfu3w7xjGQ4hQ27B5fdNrUzvnB0EA+HLRioud2YquxrCyAaQZr2vaJJyRf+sVARWSFAchj8fsNUqxXsqRkNAVyWb7Kzjj1nrpcS3HsC9ZKKTUusTdZNjd9y2yEDKj8n7hPtAEyQgaqH1lUjJFQBCpGHbsROEhRjoUGcrQNFgmmnJbirEhIEarIMqjpDZ+65HPf+d4PZmZmsixzj9JJs7385a/atX07NSYYCEnnFAREALD52JaCcs4u5hBCMAO7zz76ScfouaUMUdiyyWyW2YaWS39+/45dTIkWVALRK560ewuHg0ycsjTlXfdceiqfK1/K9bGwZRC70DFnHRWvXUucMmKtpcL+l1gTlMVAYbx25lKwNUKlOqzgX4JjlTPHKcFINS+rrDgRkEadoE5QNzBKMF+/JP+miotP/M9jVDGSRpVLxzrgqjdmsOoGeKxqQtKgIlERNidf9eo33n77be1W04XpszMzF1/8/qv+dIWeWm1ZUGnnnJ17kNzeCu5vSa0sNLBedPpUZHqDNOcfZ5mNNdxwV+cHf16kVgKkuGNPOKr1qANlsZMKc5pxZiQz1ljOMptlNjOOac6pcVLZ7DqJzJIZaGn7pBMSGdqAYoIwAnr006hx4Zbf0ARfxh9xJHiqxsIG4zjqoA6/SBr2zZ0eljtK/XVVCeo4X8VyOVXkvulGlFEuGptPUspRycWs3FKckEoRR/c7pEhFQpqa7YVdSy/77zdYy5kxMzMzP/7xTz/5sU+o9jorCCoqV9eRYETAOrdcLK1hZgGlNXfT4w/XjzyAFjoGhE1mjJNHM+bTP92WZYSRZqtWrW+8+cmrFdtmI2o31GSTJprUjFUzwlZC7YZqN1Q7Uc2EJhrUbigox9eIEMJSjx97mNprT5KhJSilQR9g4FFQoEKAmlCDeKVKr/oZQNG9/KiY4SR1QIOv1SK5iEIeAQoLkLAgkSObUD5KFEOVnoAAUVxqQZ0Oh8e4Cp8bCprz5Fzt2JMBQyQgIIjYiJ5d+7c//fnt77z4E5f877X/+MerXv0GjCdEaYGc/+KmRORxCYCDT7l9aSwryyBWjNXN5PmPandWepbzLZZamW7Rr69duPamPk00BUgYD9qY3HrH4t+6mUu3ESCP0rhifnMB3SCEI/dtxxrLZNQyRGCefGz0vz9KMaYKR1miy2UMqBwr1XbwpYRd0KUL2p944RN4lN4AiyUlXxBD2cRCfDCKIzA28BfC+ShRIgEqx8V6Mh1jImpE9EReqno3ERb4LuUuTmvt9AoRXUMMJV9jRSqyRtT0+i989kvHHHPUd7/3g/kd22l6AwuA0ki555cCFIMg7sVztJDYSOtGpG2n/9Tz9jhyT71j3kQ6165NNM4vp1/41TzGMSAxEMR01b/7V13dBx4U7Mj//MEvO3fDOcfPzK+wmzigCDoDfuSB6mf70K33Wmoodnpi1fg7GY+HCQXLvM0OOrCegugfSEVXwgIjmC/fJSBkWbpj+3YHgyq3S5amJkuB8oHTgMqT6MFKmhzHrHKArQYApF5vsGvn9sWlZa01s2RZZk3a7fWBVL4LKoVsBQSohIFxctVLXvYGQMSJNSwCKnZJFyK5C3PoV2Ps4vz8cqfjOHfG2n6/u33XwuzaxnkPUdt29fpDdoMqjYWJBn3jd3Pbdhg11baQjylHLTQRiwVkW2o9AozRuCEEzvj7V60ctV+LqtlKkmUCbM84nG69JwVxid8onk7GPCvHofAt2PWE2J/6gegA38Zkwtzr9h75pJfefs99jSTxJnqDl3eXpy1bk6EdTuhMsj66gX3u9AVa7BuJ2konqCKoxtZhMG6g3gmBkrZVDqpnk7ZjiWxPbFrC0JBU31I/A4qaoOKSdlag1zO2BjgDm+XnDCmkyDnnnKIIgMJsjSaZjIxk/TztRwCQzHCWDSeamg3n8vDFs1rqAepYdAKl0o8wsAE29QWWsYhHAWObicQkHk8egRToZNk0i1I2jtJa3HB3Hg437r37r7/3mZmZmSRJkkYSaU1ElWpDkQeHE4GxUPTBehM/nIQSxFWIaFnm5lcg60NOuxMAAhVBc6I8fTHn6FVoTF8npgIIjOHTIBItd1agvwJmWLDcEZAgakDSEpdFVbgzh1hRWPZoHOWLnDKeqqQGXRxDlGWD+ZUVMEMQW/VdlAYVzy/ZHE8hUjFJtBYnGJwrJrkmjQZCQQX1BZaRHFQwon5q+nkphgteMoFCiEvysQeZK6uXZcfJqbuFOrY+pVNX36wdwIjevI8K5iU11n0gS6hUo8Wa0GYVK1xpyJ8CljWXAAlUkp88NQ/nxJwksccFJBUlLAxWl/h7JEQdo9ZIHnWu8PjokP3kAgcmcrEbMbgloUrGRBBIY9IirUCsg/g4e2IhIMpXvRo1gkgkrgRGChUJIDMiOfnBkNxcQ2ZXDRxC7X6ZQVThbBUoklpjV+oyks4fOdIAAo5AOfLKlpZAdBghGCebzxuDisxVoDu9Eng1IxURVATC7CQfiwcUqIKVU8ULHhj4g/u88tsgY7AmTjRUNBwQ1KAiKQgWiMAC0BVAA7HSbSSFAS1ZEIgQFBJaw7ZnQARiUE2vdVFQLQFJSNvUQMp5hcAZekMDAbAF4KqTZgRSAIVAAOWk45iEXFWDch8jMsLO8otQnA8CyPeTkwmgwjP7/T8MMM+F287V+jAs/3pnm0a/SCl1QGhRyqEiUZKQ8ukeDxe2p4giUc4zcyF3QYhlqch7NylJXBLCVAARrLH779aYbukb7u6X8h6IhKRQRQAAbAFBUtaJfvhDpjasaW3ZxVffPkxTG8fal6V2HCQzlGa7ceLR0erZiU1b+/+8eQGiRFFYxiMSi/tsnFo3G5nhAJEEmEj/+95BfyigVIF6FLGydp3eZ0ObKRaTIpIAklK3bDWdboYurAesCcWF6aG7QPZmM5e8ACpmoOPIxKnK/EphvLAV5HcHnUaHeH8xwvorC5KIQScaa0ptWKAIiAi0IDkKLYMgEBI5SQ0v7fGIrt5zyCVugRD5uxcfdfSR64694Ipr/72QtKNcswwRnQYkKUmzDWsal338UccfqFdW7OSEumuredxr/nX7fQMdU94GQiQAm/KD9op/9IGHHrxna2l+YXZ24sp/d85543XzXSE3FhgQULSibIVfc8G+L3nKAd2VgSKwWR9JHfv8K2+6I6WmZssArAhNZ/DER+7xf29+6PJiT7K+SiZt1tPEj3zljdf+e0gtbbko/2HQvAlBN5LH08HMBKhOdHDR4kga6T16wiLSlgAsWdYXdEgJDxoXikhRMSC1OHtCZyoSqIkQkQBqoVxTmsqzl1QuwAqBrqKtj3wTIuyvZKc+fPUhG1uLS9nzH7f2mmu30UTEBcQEUCEBkUpXzEXn73/0PnjYky6/d5ccvX/y1NP2me+mBT5RCsI28MC+9dmHTaruxtN/tjIwpxy7+6OOWb3SSwF1hQfNmTdaqfjOO3ee9bqrEUHMAEjdsV3A6QwhOT0smGx+7w/br7r+cjPofu8DJ92waf4d/3dDNNG8/b4U4gYX1CpBQXDKLXk+iOILknkTTCu5OBRPW8LXU/fVZssVJyIqE2Ws8uCSXKQ9WYeifFHUM4hI5RSScPN4U1IrvA8iCAwNgBXg4p+Uok5czIcIdiK2dRxRftSX1VdrX3n+3n+6+p4fXLHtIy8/7I2fiZaHrBWyM3EiyfMvFVPGWbZq1eSm+5f/dOXOP105D2vW6Diucpkiq0+0RYZVU2p7T//453f/+Of3wNr1RCxM+R0Uo8EQqNMd3nTjZsAElALVhGaEqnQHIACgYW7FzG3rgJih0ffdv3jzpjlorYI4Rl2iIgAQxYpZNhV526VSZSxZUhdcSOnkpTWN0kbBnwLslSXzvEhqcwwRq5gFa769orcoTSUiAvwrDEXAyz9sRHTgHs04hkjZRkKtRE3E1IiUjpVWEEeqEatYgSaMFCiNzQZ+/ifbb92cRjFx7q5wOLS779V47FGtp7zhust+uelDLznkqafu9elv3x3PJMK5CbsqCjX1Zy/besZx6/70yWO33N+96e6Vr/526eu/3emRoPMeJkb0vi/c+O23HvSPr5921+bFm+5Y/tTlc7/6+yK2Gr5+nCu9dJbm91qz4epvnCbMEwn8/O/DV39yE7WAC/xa7sQUwUQLkLN+F0SIWqqpTV5sctU0ECNrpuHFF+zGLFlmLGNqJLOSsWQZZ6mxhocpd1LoZtAfcGakN+R759iKJ0yXR74yIrNAABJFWjsjxIrKD55f16FKqZdzscRRNNFucg5lEh87LaFaXX4/gp2+UalESvoD049wRYkiIEJFECmIFMQKCIlIiFQU4XI3RQpehAdwwWPWme7S0kr/wQevu/bmpWc+auoz3zOW40qGAIEZVDO+e1t27PP+9Ogj1EMOWnva8bt99hV7m+HwW1f0k0lti0Ihs1CC193cPfrCfz3myOaRe8dnPmLjV16779lvveXvt1ndJC4TTmdLpOYW+l+8bJNQnER42+YMqdgyririqllO9InNoNsTBsYIhaQUdikcyNDAzXctWmucOjULGEbDkBkxVoTBMg8NDSwMDLKFYRaqzVWlCBkDlGButRKla14WwUskdE0lQKoIDGKtJyeaYjloRwWBfvCemeW7t6fAXPxzEsJu7rCMVDoRgGAyiWPNuTQjZlbiNp7/iHVZll36+gPj5uSw15uIhw85dPrqW4aNNnF5QCk0qd1t9yRd6fz6Twu//lP3/Z+/42+XHvuYo2a+9btOHp3mklloh2bj/rO75ld++pttPwX1we9sue1Lx510xMzfb9iBLQ3iDcBDQqCt2/uf+s69RbetAdMT5bN2qir5RDUEADaMVkrVOCwrwQ4FstKT7/5qOc+voKbpXJ61fhGInIsunjTWtKEDOR3Lk62GY0f6er5QhcSBi65Rm0RrvXb1LFjrRb7gEYUDG3a47ySiQvDYr3+NNrecPZAIlcPPSUG6kj3+xNZxB8Tnvf6f1940HyVKBt2ffPDYl5yzx7Nv3ORNAEMi5MHwNeesPf9he3z6R/dvXqADd5N9NsQfu+xeABYOSADI8j/PXbf/2nVf+tm2+X507IFaSfb3m+ZLEJEveSBmuMea1uufezAC2CwlHX31D8v3zQPGJSPTTeAgYAHAWDNymqc3TnbDf6YENB0XZZmwbhFUassqA5alMsEQROtpTuffY167ZnWkVWZlZGiOFGKkUkLbw3CWBRE27r4eeASpWREgpAYRKSZsuWEB3iSQ2vHhjjsuRc9zC0LCEw6b+s7Pb7vsih2AEZCBFbjkR9vOOmHdxCT0jSjtUgJhK6qpLvnhNjHrzj5hJiZe6mVv++K93/r9HDXa1gkYoThyFSbxO7605aIzpi84dT1m3aU0eeX/3fvnf3VpcsJy0VfLkxa5c2v3jq3qhIMSjTRMtUK+7EoGoWpVxKuUqejGTct33NcDrfOMwZ+aICDg4EcE9e4bjJvL7QU26Iu7ektbFjMQQXj3DWuREG2l8lqFAJCLkXKRNuVhvMOdD4fDVjP55g9+9ayXvmtiasIyl0CQqu2ANT2uQEvaM18MFUMCRH7RG8jTCGCbriwiCenImbk1jEgqToC0axKXrEbb7UN/AHHWon4vi8BEMBGjbrgGZZX7oXC3D8OhbkkMaW9IYBU2NUQNVJHXBAcAkWEPsgFkw6KupCBOQMe5CjRWzXURBrGQ9kEEdSTVmwY8r1wIuqJMhETuULlsjJBdwASqyhVKkV1a/vAH3/C0p5xlrUxOTSZJQ2udi5EWrlY/EAQOEYepOXD/ja3JtrGclzJCMwyBPlinRqE8kBKU19pH9ON7YRbQrQk3dS4vcFM+LoWQikEP+d3qpoZGw2RRzybYAKWIUUMJZ3XcHAJg1s0YEmWMNdCkxBIBY4R537AiyoEwRBGABZ1LVOb01/ytKRwYSAAAOgYAyIEDZbfbyWrnsUWBPBUP5RyQuSqZdk8aq/7IKhq3IIK1Vk+0HrT/3llmtI7qwrFew79Ya5Ri3nD+xNM03XevDfvttdu/b7ur2Ui4UBGtO5NaJQ49VK74Ylul3HA4OQDzUlkOSLOG2RZ7RpVSayLEAkWDD3Piq3MbmiBCATKFHG3evyMFOgGdAJGbKwxIoBRnKVsLLGAzsAZsCjYDtmAzsAPAFNQw7zfkmsEEgsCFmn7+TVcPtyAWio5Uzd9KVUMeUYMe0Q3F+hhLT4vDD0zL5sgw3bj/nnvvtVuamThu+PoNvrnqwIVi1W0iRGvt1NTECUcdcuP1t2KzAZUUS012SQKhVEQEghxIpQqJWO1UvDH/PEKlkDSpCHVMOiIVASrUESmNOlJRjDpRcaIihYpIEWqlIk2RVrEiTTpSOnLIDkwSrSKtFelIxzpKtNJRREolsW5FcaJ1K1btRLdi3dJkBYbGppa7Q9sZpoPMqf1nncz2h9lgmKZpmqXGOH5NZs3QFsL/Viyb1HBmrbGcWTapzTLOUjZDsJm1lq0RkwGnnKXCRqwRzthkYlO2GbARtsX3DbDNJdbEFDNcGLiulh6qGhbZLBGk6TFHHDg1NZlljBRyyEqVgELpLnS2UrpPspYfc/JDv/CNH1ftvwrfw1izR/TZU1YsAxin3yul70Jvyj36oxnLIjvkOyNvqriZ2rnyP2Jui3l9WylEIu3koxWqiKIkx+LoKIobpCIipaJIx4mKojjS1uaTcbLBgG1q06GY1GZDkw1NlrLN2GZiUhHLxrhpTWKt4ypBPnTLTeix+WAOtsAGyqE9rjWUQzJtOcS8UGgoNFrLuNpTSQicc1nqKJ0fBpR+UPTw449hFre6GErLe5L+4ouNBmJZRNjrD44/5tD99t3rri33JXHCefdw7NDx0jtwQWSWwgFDKAku45TbBARIKYcXrr++eIISldYQERGzQCXeSt7GJyAFLOHuISinyKPkdpOLy3CxABxOzJAAIYiBIAsSVbNREMew7APmroxRu6nrN8tY+kLYnkAephv22nDMUYcNBsNWq+XZr9TwizokNGAu14OIhERkjF2zeuac0x/+kUu+Ro0mW1tk+fVZaljtDgxZrYVylsvwykPFA15I4U+GvT5GWkcNEfYGzgeeo9wpRJh1upAkSlGltwjAvS4AUHuKl+cgjiiOMZ9qgbyyTBMTQIqHfcgMtds1uymgOjjCZReP+1NQowml04U4Bh1BUfzwW+S+eK8XmIpACJ/DMSrd3gX4QAbnWBX0lx9z0kPXrlllDJNS5ImCV112h+wJktQRUIdSqj8YPvnMU6ZWTWcmK2XLfM1EHK8nj16NrazvSA3pU/apiNAM+qef8tAD9tlTMqMIAZiowmuGc4kFCbPuygnHPXjdqmnOGIAQSBPiMD3u2CNPPO7BsrT9zMc9cq89d+dhCkhsRSE/7KRjkbSkdtXM5NFHHSppRqSceK4rQAIL5QUl14ZjRKBcXT4H1yIiKU2E0OuecfpJe+y2RhlLiG5IFiG6Jg2WTbuiHIVQSV0WB5OAL271AD1BH6iCCGxtMjN19uMenWVZFGmt3XFGWBtt6ZBIo+4Aq9o7KkXDYXrwAfuc97iT0+WOUnV22njZTIeAMilnKWcZZ6nNhpwNOUvZZNWO9Cd4IbK1Tz/vDAXWzM0P+wNUOl3pZGmKKkqXO+ymlDmYFJHp9Q7cf+8//+TS0x/xUOl2dRyZQZp2OnbX3HmPf/ShBx8snX47wShOnPS6GDPdVH/6yZfOPfVE2bn1caed8vwLzpaFedNdERZBZbs9ABZAu7jE3WU7t4uHQ1AR97p253YZDoCI+yl3+9zt2/ldzJai+IInn5mmA7u4wMagIu50eWWZV1bs0rKMqP0KoBgDWQrZULIUshRM5v6bk1QfAILpq4YTkaysPPZRJxxy0H5ZZrTWipyYKxajxsvh0xhKGQb9iJzcT0Ra68Fw+PwLnnDZL/7Yz4wTvwEMqlNljlOARQSVbsyudu6+BOwhkliTrSxKPv4CSn9irG1MTa3fsO4555+++qKnf+zLl9147b9fetHT/nTVNdf9/fpXv+6iy3/711tvvVM3Y2EBIgL1hlc89wMf/cyRh+3/VZS0s3zk4Qe+8gVP27zl/oP22/iVb/8oWb9bo9G48667MYlBGNL0sMOO/uWv//DMJ51x2WW/2Wv39TffuRlsdtGzzvvZH/62Y7HzvGc+7dNf/C5mvVe/9oX7bdxt6/07/n37vT/83s/PedLppxx3+N2bt3/skksPP+qIV7zoWTt2zvU6y5/88vcGFteuWfWqFz0zieP3fOQLc9vnTnrk8c88/3H3btnW7fb+7ys/GKTsnnnJ/Ihn15IrrYgtXJsCkHRpF9usiHPlgbSkEUCMac5MPP1JZwyzLIoip9SLRXGjmlZQFLQIRpRMKw4IIiFqpQbD7KAHbXzh089Ol7ukwoGL3lDRUkderI0mpjeefeE+5124z7kv2OfcC/c958J9zn7BPudeuOfpz4AokmLeUDlFwGTZ2pl2s5F85bu//MUVV77jv5/DS3MbNqw79pgjDjvq4BOPOfyu2+7SjUQElFbpzp3/9aRTV1Y67/rw5w496AA9MzvZTC5+3YVf+Nblv/jj3zfuvv7mO+7db/+N5zz+NMxSctl9ah5y5OHf+fFv/vzPm1904dMaSu7aOget2TPPeEx/MNh3t5mHH3skz8+98iXP3rjnbu9798VHH37QQfvvDf1dzzj/rLmF5a9/+Xsz63d795tecumXvv6zX/7qaeefu7I83HvtVBxFn/nUF9esmjn54Q+dmWq85VUv+MQnvnL7pjue+ITHDpdXHILVjyt3e8wz9nnyqzae8+KN575sr3NfutfZL93rrBftde7Lo9n1YDKsn5U1dSQhRdzp/NcTH3vAg/bOMqOVdtbrRdHB0KQyivZLyk4pu/ggJKI4jjrd/nOf9vjLf/vXm2+/u9FqMnMFRqnJV4ug1sOlXTdf+k6XTXn7CkCAdIR5j7BA6CLAMD1o3z3+dcNtN171e0P0FGsgin50+a9e8IwnP+L4o9/y/k8OTRY1EhAxmW3OTLzqhU/dfP/Oj178ugP337hutr12zWynn/75p9/f7eAjbrnjblgZHnTA/pvuuV8GhtoASMDZxt1W37115zc//sXf/OizURx/6iuvnN1zjbV25223P/LZT7t10x3A3cc88sQ3XHzJvfdu3XT3lmv+8U/QSdrvfuyLP1rZsXj8GQ9eXFq56vc/3+OQ467869V2ce7oo8/4w5+uuvuOGxZXurfdduuDH3L4v2+6+YZ//HJizVP/du11kmY0gWyD2Ur3fO8jEMz6LrAZSoOKHEmpjsIswyVFttvb96B9n/7kx/cGw2azWShtq7I86bMTPJWdstqOUJM/dCuslGKBVrPxrtc8O9bEbJ1EWjAGxGMwOk0FUpqUUjpSWpPW5ORWosif1idSCAQZu9v6dY982FFvfNObPvSWl37uaz/GyZmr//qP44857La777vlX7fGkxPMlgjt0vLrXvn8H/3iz895yTvefPEnf3j5b844+SG3/PP6yXbzbe9+x6c/9NaV5SXo3/+gPddtuuMOt3ctMzSb61bP3HnnHcO5ua//6NdrZqd2bL0/XVmMFL7zPW/6r3PPuOynv8WkeenXvnvxGy565eveeNYZj7px09bV++xrsrS/sqTWrrn5un9PTrTe/u73fepDb1tYWgY7d8De6+7ZugPV9Kqp9rb53s033/3gww95wxvf8p43vvjue+8DWyv1CQCAikBHoGOMYtQR6BiiCByMEB/AKUOhWW850vSalzyj2WwioBNmdso1vpRSAYqSstlgawSRgsIqlq0xJsuydDgcDofdXq/ViD/71R+/58Nfas5MWuYaskNGQ2mBMRNFgrg9R/SxsWtXz0QkRxx+8G2b7t50653UaB5x0D5veOkzn/eq96ac049cufqAjRvu3LI9yyxYu3r1VKsRb968bfW6NQ97yOF3bN62Y8fOXTt37rZuVWdgOr00T1UR99lt1eb7d1pQhLLb6qmtOxdlONyw+/oTjzvm6n/dtOWue1HBMQ8+ZHqqte+e60495aRnveit0cTE6olk8307MY5lMJxdM/OwY4/adNe9O3buWphf2G3dqpUBd7rdPdfP3rerw/3e7nuuP+LQg27fdPuO+ZVOd+BIkWMwTz5zE0Ist4ysrgCAKCK7vPSSFz/jaU86YzDMpqan2q12q91qNVuNRiOKE62VUgr9EpgLcMLRduUJ7dQL2DpRnNQt8bDX6zca0Vs/8PlvfueXrVVTbv7uSGaOPjbgARQbwnlBAoBiMgsi0O9DkihNG1ZNveN1F33ii9+97rqbo8lJtlUl3A6GFGsiJSDWWGBWSWzTDDpdaCSgI9LEwxQIUakyVZM0hSjKGy2pwUgDomQGul1oNnUzMd3e8571xMMO2DvNzLd+8It/XX8LNJuQZhjFAoxIYjLodCFJINKotGQpEIEiSDPQCokkzaDfhziGSINWzvBCoWafYyDB9EL0kXjh6iqyC0tnnvPo17z0mWlmJ9oT7Xar1Wo3W61ms9lIGjqK8ki6hPhU7UIOJfqLxeaib+jKssM0HQ4Gg8EgTVNh/u93fOK3f7i6OTNpjPVXq2if1IY91UmPGLQdK/VwV4jhos9o+wNApZuJuNUtqkiEyGUtCXOxDlc/L2nJRThfoZXQM6b8c8kHWOUsbyRZXlHt2BoLFrCZCDOVCvT5ZCwsxUqRsBzAXShJEBGUurfhzCjxeJ2lQq+MseyQ56sVmYXFhz3iIW97/YsQMUnidnui1Wq1Wq1Gs9lsNOMk0boItXzVsyoPrtUwpcqDXdruMneltZt9yMLvf9MLTjn5If2FZaVoxNXUvoRwkvWY2ltegRJhgXzIOoCwqGZDN2KxXDEz3LAEN0uh0AXhQh3NcMlPBhZPh3CEHFuK/Yv3jiBWTU9Y1JQ0VavhWAfsTXIUjx5ePkdPzxJA3Gx59towo5Temv4yPBBdHwCUUmZx6YSHH/WmV78AELTWSSOJ4ziKIh1FkY6UdmdwXtMPq2NY6kWHc7PQT5WK5SVyg06iOEZSpNT7Xv+8xz32xMHSits6IyLVoWrbSH9s3JQB8TVOK3LUSKwio7AwCWo+ZQlJHogZj6NnSr7YgI7SVVXdBceqUYEEY4cKwZo8r/BlxLlICX08jNQPtxovDRER7dLyKY8+4U2vfoGOtFa60Ww0kkaSxMUa5zNsAhqRiN9S0rk0aTBmqyIDOSNGJDcWh7W2zHEcW2NIqXe99jm7r1/9hW/+jKI4jiNrOQDhepMGgl6Ghy2BcS3QgMModcCPXy3DUJEPA7nrcQCSMXtMvHKLfwXiv7sHS60qrljUX8vZTTUpWO/I8/IN/4xEGWO4AkqRHWZgs6f91xlPf8qZQKRINZuNRqORJI04SaI4iorVdVZYF6EtL56Z66rAmGNHnOQYS3USp2k6TNM0HQ4Hw/5gMBwOk0j94vd/+9/PfX9ubjmeaCKAZalT2eABmyh+fOcJfYT2JUUv3RPrqnpNWDFg/MnZEpbKPLXlWoggOBIliE+QxRIKXe/s+FkCVoMcsX5vxYB19K4KsUBIhUKY5MYBdbqr185c9JwnPuJhxwxT02w0W61mo9FsNhuNRjNpJEmcJEkSRZEqMDrlPsw11Ep3zOUsxpFguNQqKqOtLMvc+g7T4XAwHA6HvX4/jtQ9W7Z9/hs/+82f/ykCcSNxB6qUFGCskS4C7EcARAp8TBXqV20wqbUdS8BeQaXFMoKqSK8F2W6MuXhTrTE4JWE8NGokfBiZk45YQy75t+Qh47z9L258DgqA9AeAcPKJRz79/Mftucd6Y7jZajYajUaj0WzknySNJI7iKI4dAosIywb+mI4Rl351xCdWY2ZcymRNlpksS4fpcDhM0+EwTdMsy7q9HrMF4T/97YZvXva7m269B4h0IyFCySMSrIQmKmvDce1OGZ1/DPWmmwQ8GxjZPDhar8f6BPJqILcEmLRq/hfWohUMetj1jg+O0XINd2/5TS+sKBUXmBkGAwA49KB9zn38I499yOGASKRarWYjSZIkX96k0WgkjSiOoih2bQYsqhyVK6pYm3kezIUgYm1YqJSDXgrdRmZjMmOcEadZlmWpW+3+YDAYDIiw2+395e83/upP/7jh1rvNYAhRpCONROUpJRI2GXzlAAyT57Hzd0DGECWLyTdjjKhmnSIjR2M+nw18kQqEGkoFoHYGy4ij9vrB3vAoqHjQ3mDgotbEzJBlkGWURIcdsPGxjzr+IUcf2mw0BMDZa5zESRwniTt9kyRJ4jjWURRFbnWpqj/XSOLlghYu2tMLCJRRcr39co2dr07TYZYZt77pMEvTNE2Hg+EgyzJCGA7TW26/5y/X/Pvaf9+5edscD1NABKXQ1dXA/x8E4jAjJ4WUxFWpgAn5Aw2KAlKnb9SamSKjqtpYdMDceYRQwwSP0K6DM1vGTVYIDiOU+qgpEQYWMBasARZoxHttWH3kofsdd/ShD9pvY6ORWJY4iluthlvdOIrjOE6SxMVWcRS5c7cMr7Ai84u3taQKALiYmu3rqnnzmyuFC3ca52tcSj2nWZalaZamaeb+MxgM0uHQjShbXFq+d8uOm++497Y7t2zdvrBrcbnbH1rDYG39RBQII0wJRpAHJxz68/yKZ8oB6MKxGoPVHas8ISF11ivD4QN730opVMYeveMhwi7rjKOJJFq9anqPDav337j7/vvssXGvDdNTE4DEDForZ6W5qUZufWO3yHHsEl83M9Mra/gXUKrHlKTPAvgeymdBMIW4VP0uzmM3H8hpehe63iYzqTPlNCuWntkiAjBba3u9wcLS8vxSZ6XT7/UH/UGaZVnu+TnX6Q4BCMAFjboMfr3h7OgDOskJo3nBMeEY7U1/vJnLLpx7glKByUvAJGQx1EBo6HkVGSM7By78IUJCjCLdiONWqzk12Zqdnpiammg1G6S0U7MlpZxpOpUuZ7LeZMcoiuJIax1FkdYOTFJdbGWFOEarENFnNvhx3oiLKwLcSkrZGGPyuaGm+MiyzGSpE3S3xhpj0izNMmONFZC8tMc2Zz0wY71/Rf6mdA7ae9bVbZX7r6gIosepcFIDylUQ3R86PlEVBggUYETIx6Z5lSAZ0VQOq25SamDkrIWqzoOeFEIwyT4vDEuZ3FE+tjMqpna6T4qVdBM8i0+d+Juqur91UQff8WBhpw42ixCyX1Aq0kVp51AedlTOW9YaEInIFtN8jVJaK6O1jtwAznzx08xYayU31ryYJ04Mu3gSWKERygnMZS3XXRNW6PB6FiNVOixesxMAiJ2WImHIT/EI00j+YE5fHF18UU5vZRyfTepZd3Wm+TG6IJRYGtAO+qtIK+2uypWAteP5KlWOaNXVqNZ8aZXKNbFx9GAI6wfojdVBN0EOPQXqUsiopmtUuqu8ls55Q4KtzSf2WTbWuNlP1n2zGOfmyAr5DAQIZ21J+LyDFfDkB0oEtQiMz/n8S/ZIzJ40YsC0KOcDhSjgiuEeqOgWs+FzglnecvBPO6nqgyilNHdx8JVPEfPSk1NNJXKzs4ny+bv5DG1nsbnl5P2A4r39xKK+3CK1UpqGUSn+YmN6vQf0IbDkRPNIyDV2EInZEhGxm53teo3Wup4yWzeNqIjR3MwrP7sV9ltMEga/PiOvdvD4UZNX+PRfBwFH0vywbS04WmLGqoKSF8I8eSyoItdytG2t0iWBXF9h917hpqgAI5EiwqqdU8xDV6qYRe6tbNVQQ78lh+OKg+VXlrkYABH48RK9GwCppSYbIwVqn9lbv9wLO8VrLnxxXvXw85l8L1Wjav3SX6mG6jve+j1IABp22MS6XhsGQOXgBQGLigkiwmgpAys+s1cSKRlwASleQuuRSsQk3BYlphGgWt+ia0fFuHsqrLb6E6hEVwOMhtQUkrx6M5alSilA74gB1jOY91Br42MwxsEvbJb/x1wNoPWGLYlXDfXWTAItavQo5FKro+OYaQDiERZH48SgzyVjT81aCOqVg+pQlWqJxsRiXtZbRvy16VMlz6TsFRTAuQL+iiXusabcJ/6MSfR3uK+xU32zbDZIKHOIIQ0RQtqZhML+4C9zMVsqWFR/Vqk/IK0sIWJt/rjI2KULIIIjWSqOQIIqaRHvZ1JrRuEDEEXCmm4wOdA7wcZ1qMYO28ba5+hDGxEICavkFkOqSYVY8IIPn4ZUzrGGWnIc1qLHV/i8pUSs/6R0rOgvnGerYeQaHFYyBi//Hy5h9GHBuNrVSHIy/tf+YydB/lOHEcfKH4cQJD/28SqzYSARFvUCew0w6mFY9Z/rKvWb8CpZ/x+/LUEhe/zO9VtiHqsUAxrZA/bgSyvx/gQDocf/dFcjIhR+Gbk+96A2yFMq0dkxjK/RdQ9VrLFCGIx1AzjS/K6Z6cjl4QP2wP9Dd2v8x/8LZ1EFl1nveC0AAAAASUVORK5CYII=</script>
+<script>
+(function(){
+"use strict";
+
+var STORAGE_KEY = "pma-asset-data-v1";
+var AUTH_KEY = "pma-auth-v1";
+var SESSION_KEY = "pma-session-v1";
+var DEFAULT_USER = "admin";
+var DEFAULT_PASS = "admin123";
+var DEFAULT_DATA = JSON.parse(document.getElementById('asset-data').textContent);
+var LOGO_URI = 'data:image/png;base64,' + document.getElementById('logo-data').textContent.trim();
+(function setFavicon(){
+  var fav = document.getElementById('faviconLink');
+  if(fav) fav.href = LOGO_URI; // guaranteed to show even if icon-192.png isn't hosted alongside this file
+})();
+
+var state = {
+  data: null,          // { CategoryName: { columns:[...], rows:[{...}] } }
+  order: [],           // category name order
+  current: null,       // "__overview__" or category name
+  search: "",
+  editingKey: null,    // rowId currently being edited
+  draft: null,         // draft object for the row being edited
+  addingNew: false,
+  dirty: false,
+  lastSaved: null,
+  loaded: false,
+  authUser: DEFAULT_USER,
+  authHash: null
+};
+
+var root = document.getElementById('root');
+var toastWrap = document.getElementById('toastWrap');
+var rowIdCounter = 1;
+
+function uid(){ return 'r' + (rowIdCounter++) + '_' + Math.random().toString(36).slice(2,7); }
+
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+
+function ensureRowIds(data){
+  Object.keys(data).forEach(function(cat){
+    data[cat].rows.forEach(function(r){
+      if(!r.__id) r.__id = uid();
+    });
+  });
+  return data;
+}
+
+function escapeHtml(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* ---------------- persistence ---------------- */
+
+// Three possible backends, tried in this order:
+// 1. GitHub (if the user connected a repo in Settings) — real shared "server",
+//    free, works from any device/browser, data lives in your own GitHub repo.
+// 2. Claude's built-in storage (window.storage) — only available while this
+//    is opened live inside Claude.ai.
+// 3. Plain browser localStorage — last-resort fallback, saved on that device only.
+var usingCloudStorage = false;
+var GH_CONFIG_KEY = "pma-github-config-v1";
+var githubConfig = null; // {owner, repo, branch, token, dataPath, authPath}
+var ghShaCache = {}; // path -> last known sha, needed for GitHub's update API
+
+function loadGithubConfig(){
+  try{
+    var raw = localStorage.getItem(GH_CONFIG_KEY);
+    githubConfig = raw ? JSON.parse(raw) : null;
+  }catch(e){ githubConfig = null; }
+}
+
+function saveGithubConfig(cfg){
+  githubConfig = cfg;
+  ghShaCache = {};
+  try{ localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(cfg)); }catch(e){}
+}
+
+function clearGithubConfig(){
+  githubConfig = null;
+  ghShaCache = {};
+  try{ localStorage.removeItem(GH_CONFIG_KEY); }catch(e){}
+}
+
+function hasGithubConfig(){
+  return !!(githubConfig && githubConfig.owner && githubConfig.repo);
+}
+
+function ghPathFor(key){
+  if(key === STORAGE_KEY) return (githubConfig.dataPath || 'asset-data.json');
+  if(key === AUTH_KEY) return (githubConfig.authPath || 'auth.json');
+  return key + '.json';
+}
+
+function ghApiUrl(path){
+  var branch = githubConfig.branch || 'main';
+  return 'https://api.github.com/repos/' + encodeURIComponent(githubConfig.owner) + '/' +
+    encodeURIComponent(githubConfig.repo) + '/contents/' + path + '?ref=' + encodeURIComponent(branch);
+}
+
+function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64DecodeUnicode(str){ return decodeURIComponent(escape(atob(str.replace(/\n/g,'')))); }
+
+function githubFetchFile(path){
+  var headers = {'Accept':'application/vnd.github+json'};
+  if(githubConfig.token) headers['Authorization'] = 'Bearer ' + githubConfig.token;
+  return fetch(ghApiUrl(path), {headers: headers}).then(function(res){
+    if(res.status === 404) return null;
+    if(!res.ok){
+      return res.json().catch(function(){ return {}; }).then(function(e){
+        throw new Error(e.message || ('GitHub error ' + res.status));
+      });
+    }
+    return res.json();
+  }).then(function(json){
+    if(!json) return null;
+    ghShaCache[path] = json.sha;
+    return b64DecodeUnicode(json.content);
+  });
+}
+
+function githubWriteFile(path, contentStr){
+  if(!githubConfig.token){
+    return Promise.reject(new Error('Token GitHub belum diisi — buka Sambungan GitHub di sidebar.'));
+  }
+  var headers = {
+    'Accept':'application/vnd.github+json',
+    'Authorization': 'Bearer ' + githubConfig.token,
+    'Content-Type': 'application/json'
+  };
+  var body = {
+    message: 'Update ' + path + ' via Sistem Asset PMA',
+    content: b64EncodeUnicode(contentStr),
+    branch: githubConfig.branch || 'main'
+  };
+  if(ghShaCache[path]) body.sha = ghShaCache[path];
+
+  var url = 'https://api.github.com/repos/' + encodeURIComponent(githubConfig.owner) + '/' +
+    encodeURIComponent(githubConfig.repo) + '/contents/' + path;
+
+  return fetch(url, {method:'PUT', headers: headers, body: JSON.stringify(body)}).then(function(res){
+    if(res.status === 409){
+      // someone else saved in between — refetch sha once and retry
+      return githubFetchFile(path).then(function(){
+        body.sha = ghShaCache[path];
+        return fetch(url, {method:'PUT', headers: headers, body: JSON.stringify(body)});
+      });
+    }
+    return res;
+  }).then(function(res){
+    if(!res.ok){
+      return res.json().catch(function(){ return {}; }).then(function(e){
+        throw new Error(e.message || ('GitHub error ' + res.status));
+      });
+    }
+    return res.json();
+  }).then(function(json){
+    if(json && json.content && json.content.sha) ghShaCache[path] = json.content.sha;
+    return json;
+  });
+}
+
+function hasCloudStorage(){
+  return typeof window !== 'undefined' && window.storage &&
+    typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+}
+
+function storageGet(key, shared){
+  if(hasGithubConfig()){
+    var path = ghPathFor(key);
+    return githubFetchFile(path).then(function(content){
+      return content ? {key:key, value:content} : null;
+    }).catch(function(err){
+      toast('Gagal ambil data dari GitHub: ' + err.message, 'err');
+      return null;
+    });
+  }
+  if(hasCloudStorage()){
+    usingCloudStorage = true;
+    return window.storage.get(key, !!shared).catch(function(){ return null; });
+  }
+  return new Promise(function(resolve){
+    try{
+      var v = localStorage.getItem(key);
+      resolve(v ? {key:key, value:v} : null);
+    }catch(e){ resolve(null); }
+  });
+}
+
+function storageSet(key, value, shared){
+  if(hasGithubConfig()){
+    var path = ghPathFor(key);
+    return githubWriteFile(path, value).then(function(){
+      return {key:key, value:value};
+    }).catch(function(err){
+      toast('Gagal simpan ke GitHub: ' + err.message, 'err');
+      return null;
+    });
+  }
+  if(hasCloudStorage()){
+    return window.storage.set(key, value, !!shared).catch(function(){ return null; });
+  }
+  return new Promise(function(resolve){
+    try{
+      localStorage.setItem(key, value);
+      resolve({key:key, value:value});
+    }catch(e){ resolve(null); }
+  });
+}
+
+function hashText(text){
+  if(window.crypto && window.crypto.subtle && window.isSecureContext !== false){
+    try{
+      var enc = new TextEncoder().encode('pma::' + text);
+      return window.crypto.subtle.digest('SHA-256', enc).then(function(buf){
+        var arr = Array.from(new Uint8Array(buf));
+        return arr.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+      }).catch(function(){ return fallbackHash(text); });
+    }catch(e){ return Promise.resolve(fallbackHash(text)); }
+  }
+  return Promise.resolve(fallbackHash(text));
+}
+
+function fallbackHash(text){
+  // Weak fallback only used when Web Crypto is unavailable (very old/non-secure contexts).
+  var s = 'pma::' + text, h = 0;
+  for(var i=0;i<s.length;i++){ h = ((h<<5)-h) + s.charCodeAt(i); h |= 0; }
+  return 'fb' + Math.abs(h).toString(16);
+}
+
+function loadData(){
+  storageGet(STORAGE_KEY, true).then(function(res){
+    if(res && res.value){
+      try{
+        var parsed = JSON.parse(res.value);
+        state.data = ensureRowIds(parsed.data);
+        state.order = parsed.order || Object.keys(state.data);
+        state.lastSaved = parsed.savedAt || null;
+      }catch(e){
+        bootstrapDefault();
+      }
+    } else {
+      bootstrapDefault();
+    }
+    finishBoot();
+  }).catch(function(){
+    bootstrapDefault();
+    finishBoot();
+  });
+}
+
+function finishBoot(){
+  state.loaded = true;
+  state.current = "__overview__";
+  render();
+}
+
+function bootstrapDefault(){
+  state.data = ensureRowIds(deepClone(DEFAULT_DATA));
+  state.order = Object.keys(state.data);
+}
+
+function persist(silent){
+  var payload = {
+    data: state.data,
+    order: state.order,
+    savedAt: new Date().toISOString()
+  };
+  return storageSet(STORAGE_KEY, JSON.stringify(payload), true).then(function(res){
+    if(res){
+      state.dirty = false;
+      state.lastSaved = payload.savedAt;
+      if(!silent) toast('Perubahan berhasil disimpan.', 'ok');
+      renderTopbarSaveState();
+    } else {
+      toast('Gagal menyimpan perubahan.', 'err');
+    }
+  }).catch(function(){
+    toast('Gagal menyimpan perubahan.', 'err');
+  });
+}
+
+function markDirty(){
+  state.dirty = true;
+  renderTopbarSaveState();
+}
+
+/* ---------------- toast ---------------- */
+
+function toast(msg, kind){
+  var el = document.createElement('div');
+  el.className = 'toast ' + (kind === 'err' ? 'err' : 'ok');
+  el.innerHTML = '<span class="dot"></span><span>' + escapeHtml(msg) + '</span>';
+  toastWrap.appendChild(el);
+  setTimeout(function(){
+    el.style.transition = 'opacity .25s ease';
+    el.style.opacity = '0';
+    setTimeout(function(){ el.remove(); }, 250);
+  }, 2600);
+}
+
+/* ---------------- status tag helper ---------------- */
+
+function statusClass(v){
+  var s = String(v||"").toLowerCase();
+  if(s.indexOf('in use') > -1 || s.indexOf('in user') > -1) return 'status-inuse';
+  if(s.indexOf('stock') > -1) return 'status-stock';
+  if(s.indexOf('dead') > -1 || s.indexOf('rusak') > -1) return 'status-dead';
+  return 'status-plain';
+}
+
+function isStatusColumn(col){
+  return /status/i.test(col);
+}
+function isCodeColumn(col){
+  return /(asset no|serial|licence|ip$|no\.)/i.test(col);
+}
+
+/* ---------------- render: shell ---------------- */
+
+function render(){
+  if(!state.loaded){
+    root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#565F58;font-family:IBM Plex Mono,monospace;font-size:12px;">Memuat data aset…</div>';
+    return;
+  }
+  root.innerHTML =
+    '<div class="app">' +
+      renderRail() +
+      '<div class="main">' +
+        '<div id="topbar"></div>' +
+        '<div class="content" id="content"></div>' +
+      '</div>' +
+    '</div>';
+  renderTopbar();
+  renderContent();
+  bindGlobalEvents();
+}
+
+function categoryCount(cat){ return state.data[cat].rows.length; }
+function totalAssets(){
+  return state.order.reduce(function(sum,c){ return sum + categoryCount(c); }, 0);
+}
+
+function renderRail(){
+  var items = state.order.map(function(cat){
+    var active = state.current === cat ? ' active' : '';
+    return '<div class="rail-item' + active + '" data-cat="' + escapeHtml(cat) + '">' +
+      '<span class="ri-name">' + escapeHtml(cat) + '</span>' +
+      '<span class="ri-count">' + categoryCount(cat) + '</span>' +
+    '</div>';
+  }).join('');
+
+  var ovActive = state.current === '__overview__' ? ' active' : '';
+
+  var ghStatus = hasGithubConfig()
+    ? ('<span class="gh-dot on"></span>' + escapeHtml(githubConfig.owner + '/' + githubConfig.repo))
+    : ('<span class="gh-dot off"></span>Belum tersambung');
+
+  return '<div class="rail">' +
+    '<div class="rail-head">' +
+      '<img class="rail-logo" src="' + LOGO_URI + '" alt="Logo PMA Asset">' +
+      '<span class="rail-tag">IT · INVENTORY</span>' +
+      '<h1 class="rail-title">Sistem Asset PMA</h1>' +
+      '<p class="rail-sub">by Adi Nugraha</p>' +
+    '</div>' +
+    '<div class="rail-list">' +
+      '<div class="rail-item overview' + ovActive + '" data-cat="__overview__">' +
+        '<span class="ri-name">Ringkasan</span><span class="ri-count">' + totalAssets() + '</span>' +
+      '</div>' +
+      '<div class="rail-group-label">KATEGORI ASET</div>' +
+      items +
+      '<div class="rail-add" id="railAddCat">' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>' +
+        '<span>Kategori baru</span>' +
+      '</div>' +
+      '<div class="rail-group-label">PENYIMPANAN</div>' +
+      '<div class="rail-item" id="railGithub">' +
+        '<span class="ri-name">' + ghStatus + '</span>' +
+        '<span class="ri-count">' + icon('github') + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="rail-foot">' +
+      '<div class="rail-foot-row">' +
+        '<div>Login sebagai<br><b>' + escapeHtml(state.authUser || '') + '</b></div>' +
+        '<div class="rail-foot-actions">' +
+          '<span class="rail-icon-btn" id="btnAccount" title="Ubah password">' + icon('gear') + '</span>' +
+          '<span class="rail-icon-btn" id="btnLogout" title="Keluar">' + icon('logout') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="margin-top:10px;">Total tercatat <b>' + totalAssets() + ' aset</b> di ' + state.order.length + ' kategori</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderTopbarSaveState(){
+  var el = document.getElementById('saveState');
+  var btn = document.getElementById('btnSave');
+  if(!el || !btn) return;
+  var where = hasGithubConfig() ? ' (GitHub: ' + escapeHtml(githubConfig.owner + '/' + githubConfig.repo) + ')'
+    : usingCloudStorage ? ' (dibagikan ke tim)' : ' (di browser ini saja)';
+  if(state.dirty){
+    el.innerHTML = '<span class="unsaved-dot"></span> Ada perubahan belum disimpan';
+    btn.removeAttribute('disabled');
+  } else {
+    el.innerHTML = state.lastSaved ? ('Tersimpan' + where + ' · ' + formatTime(state.lastSaved)) : ('Belum pernah disimpan' + where);
+    btn.setAttribute('disabled','disabled');
+  }
+}
+
+function formatTime(iso){
+  try{
+    var d = new Date(iso);
+    return d.toLocaleString('id-ID', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+  }catch(e){ return ''; }
+}
+
+function renderTopbar(){
+  var tb = document.getElementById('topbar');
+  var isOverview = state.current === '__overview__';
+  var title = isOverview ? 'Ringkasan Aset' : state.current;
+  var eyebrow = isOverview ? 'DASHBOARD' : ('KATEGORI · ' + categoryCount(state.current) + ' ITEM');
+
+  var actions = '';
+  if(!isOverview){
+    actions =
+      '<div class="search-wrap">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>' +
+        '<input id="searchInput" type="text" placeholder="Cari di ' + escapeHtml(state.current) + '…" value="' + escapeHtml(state.search) + '">' +
+      '</div>' +
+      '<button class="btn" id="btnImport">' + icon('upload') + ' Import</button>' +
+      '<button class="btn" id="btnExport">' + icon('download') + ' Export</button>' +
+      '<button class="btn" id="btnAddRow">' + icon('plus') + ' Tambah</button>';
+  } else {
+    actions =
+      '<button class="btn" id="btnImport">' + icon('upload') + ' Import</button>' +
+      '<button class="btn" id="btnExportAll">' + icon('download') + ' Export semua</button>';
+  }
+
+  tb.className = 'topbar';
+  tb.innerHTML =
+    '<div class="topbar-title-wrap">' +
+      '<p class="topbar-eyebrow mono">' + eyebrow + '</p>' +
+      '<h2 class="topbar-title">' + escapeHtml(title) + '</h2>' +
+    '</div>' +
+    actions +
+    '<div class="save-state" id="saveState"></div>' +
+    '<button class="btn btn-primary" id="btnSave">' + icon('save') + ' Simpan</button>' +
+    '<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">';
+
+  renderTopbarSaveState();
+}
+
+function icon(name){
+  var paths = {
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    upload: '<path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/>',
+    download: '<path d="M12 4v12M6 12l6 6 6-6"/><path d="M4 20h16"/>',
+    save: '<path d="M5 4h11l4 4v12H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>',
+    check: '<path d="M20 6L9 17l-5-5"/>',
+    x: '<path d="M18 6L6 18M6 6l12 12"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    github: '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.1-.5 2V21"/>'
+  };
+  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name]||'') + '</svg>';
+}
+
+/* ---------------- content router ---------------- */
+
+function renderContent(){
+  var c = document.getElementById('content');
+  if(state.current === '__overview__'){
+    c.innerHTML = renderOverview();
+    bindOverviewEvents();
+  } else {
+    c.innerHTML = renderTable();
+    bindTableEvents();
+  }
+}
+
+/* ---------------- overview ---------------- */
+
+function renderOverview(){
+  var sorted = state.order.slice().sort(function(a,b){ return categoryCount(b) - categoryCount(a); });
+  var max = Math.max.apply(null, sorted.map(categoryCount).concat([1]));
+
+  var bars = sorted.map(function(cat){
+    var n = categoryCount(cat);
+    var pct = Math.max(4, Math.round((n/max)*100));
+    return '<div class="bar-row" data-cat="' + escapeHtml(cat) + '">' +
+      '<span class="bar-name">' + escapeHtml(cat) + '</span>' +
+      '<span class="bar-track"><span class="bar-fill" style="width:' + pct + '%"></span></span>' +
+      '<span class="bar-count mono">' + n + '</span>' +
+    '</div>';
+  }).join('');
+
+  // status breakdown across all categories
+  var statusCounts = {};
+  state.order.forEach(function(cat){
+    var cols = state.data[cat].columns;
+    var statusCol = cols.find(isStatusColumn);
+    if(!statusCol) return;
+    state.data[cat].rows.forEach(function(r){
+      var v = (r[statusCol] || '').toString().trim();
+      if(!v) return;
+      statusCounts[v] = (statusCounts[v]||0) + 1;
+    });
+  });
+  var statusLines = Object.keys(statusCounts).sort(function(a,b){return statusCounts[b]-statusCounts[a];}).slice(0,7).map(function(k){
+    return '<div class="stat-line"><span>' + escapeHtml(k) + '</span><b class="mono">' + statusCounts[k] + '</b></div>';
+  }).join('') || '<div class="stat-line"><span>Tidak ada data status</span></div>';
+
+  var locSet = {};
+  state.order.forEach(function(cat){
+    var cols = state.data[cat].columns;
+    var locCol = cols.find(function(c){ return /lokasi/i.test(c); });
+    if(!locCol) return;
+    state.data[cat].rows.forEach(function(r){
+      var v = (r[locCol]||'').toString().trim();
+      if(v) locSet[v] = true;
+    });
+  });
+  var locPills = Object.keys(locSet).sort().map(function(l){ return '<span class="tag-pill">' + escapeHtml(l) + '</span>'; }).join('') || '<span class="tag-pill">—</span>';
+
+  return (
+    '<div class="ov-hero">' +
+      '<div>' +
+        '<div class="ov-hero-num mono">' + totalAssets() + '</div>' +
+        '<div class="ov-hero-label">total aset tercatat di ' + state.order.length + ' kategori</div>' +
+      '</div>' +
+      '<div class="ov-hero-meta">' +
+        (state.lastSaved ? ('Terakhir disimpan<br><span class="mono">' + formatTime(state.lastSaved) + '</span>') : 'Belum pernah disimpan ke penyimpanan lokal') +
+      '</div>' +
+    '</div>' +
+    '<div class="ov-grid">' +
+      '<div class="ov-card"><h3>Aset per kategori</h3>' + bars + '</div>' +
+      '<div>' +
+        '<div class="ov-card" style="margin-bottom:18px;">' +
+          '<h3>Status aset</h3>' + statusLines +
+        '</div>' +
+        '<div class="ov-card">' +
+          '<h3>Lokasi tercatat</h3>' +
+          '<div style="padding-bottom:14px;">' + locPills + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function bindOverviewEvents(){
+  document.querySelectorAll('.bar-row').forEach(function(el){
+    el.addEventListener('click', function(){
+      state.current = el.getAttribute('data-cat');
+      state.search = '';
+      renderAll();
+    });
+  });
+}
+
+/* ---------------- table ---------------- */
+
+function getFilteredRows(){
+  var cat = state.current;
+  var rows = state.data[cat].rows;
+  if(!state.search) return rows;
+  var q = state.search.toLowerCase();
+  return rows.filter(function(r){
+    return Object.keys(r).some(function(k){
+      if(k === '__id') return false;
+      return String(r[k]||'').toLowerCase().indexOf(q) > -1;
+    });
+  });
+}
+
+function renderTable(){
+  var cat = state.current;
+  var cols = state.data[cat].columns;
+  var rows = getFilteredRows();
+
+  var head = cols.map(function(c){ return '<th>' + escapeHtml(c) + '</th>'; }).join('') + '<th class="col-actions">Aksi</th>';
+
+  var bodyRows = rows.map(function(r){ return renderRow(r, cols); }).join('');
+
+  var newRowHtml = '';
+  if(state.addingNew){
+    newRowHtml = renderRow(state.draft, cols, true);
+  }
+
+  var tableHtml =
+    '<div class="table-scroll"><table class="data-table"><thead><tr>' + head + '</tr></thead><tbody>' +
+      newRowHtml + bodyRows +
+    '</tbody></table></div>';
+
+  var emptyHtml = '';
+  if(rows.length === 0 && !state.addingNew){
+    tableHtml = '<div class="table-scroll">' +
+      '<div class="empty-state">' +
+        (state.search
+          ? ('<h3>Tidak ada hasil</h3><p>Tidak ditemukan data untuk pencarian "' + escapeHtml(state.search) + '".</p>')
+          : ('<h3>Belum ada data</h3><p>Kategori ini masih kosong. Tambahkan baris pertama atau import dari file.</p>')
+        ) +
+      '</div></div>';
+  }
+
+  var countLabel = state.search
+    ? ('Menampilkan ' + rows.length + ' dari ' + state.data[cat].rows.length + ' baris')
+    : (rows.length + ' baris');
+
+  return '<p class="result-count">' + countLabel + '</p>' + tableHtml;
+}
+
+function renderRow(r, cols, isNew){
+  var key = isNew ? '__new__' : r.__id;
+  var editing = state.editingKey === key;
+  var rowClass = editing ? ' class="editing"' : '';
+  var cells;
+
+  if(editing){
+    cells = cols.map(function(c){
+      var val = state.draft[c] == null ? '' : state.draft[c];
+      return '<td><input class="cell-input" data-field="' + escapeHtml(c) + '" value="' + escapeHtml(val) + '"></td>';
+    }).join('');
+    var actions =
+      '<td class="col-actions"><span class="row-actions">' +
+        '<span class="icon-btn confirm" data-act="commit" title="Simpan baris">' + icon('check') + '</span>' +
+        '<span class="icon-btn" data-act="cancel" title="Batal">' + icon('x') + '</span>' +
+      '</span></td>';
+    return '<tr' + rowClass + ' data-key="' + key + '">' + cells + actions + '</tr>';
+  }
+
+  cells = cols.map(function(c){
+    var val = r[c];
+    if(isStatusColumn(c) && val){
+      return '<td><span class="status-tag ' + statusClass(val) + '">' + escapeHtml(val) + '</span></td>';
+    }
+    if(isCodeColumn(c) && val){
+      return '<td><span class="cell-text cell-code">' + escapeHtml(val) + '</span></td>';
+    }
+    return '<td><span class="cell-text" title="' + escapeHtml(val) + '">' + escapeHtml(val === '' || val == null ? '—' : val) + '</span></td>';
+  }).join('');
+
+  var rowActions =
+    '<td class="col-actions"><span class="row-actions">' +
+      '<span class="icon-btn" data-act="edit" title="Sunting">' + icon('edit') + '</span>' +
+      '<span class="icon-btn danger" data-act="delete" title="Hapus">' + icon('trash') + '</span>' +
+    '</span></td>';
+
+  return '<tr data-key="' + key + '">' + cells + rowActions + '</tr>';
+}
+
+/* ---------------- table events ---------------- */
+
+function bindTableEvents(){
+  var searchInput = document.getElementById('searchInput');
+  if(searchInput){
+    searchInput.addEventListener('input', function(e){
+      state.search = e.target.value;
+      var c = document.getElementById('content');
+      c.innerHTML = renderTable();
+      bindTableEvents();
+      var si = document.getElementById('searchInput');
+      if(si){ si.focus(); si.selectionStart = si.selectionEnd = si.value.length; }
+    });
+  }
+
+  document.querySelectorAll('tr[data-key]').forEach(function(tr){
+    var key = tr.getAttribute('data-key');
+    tr.querySelectorAll('[data-act]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var act = btn.getAttribute('data-act');
+        if(act === 'edit') startEdit(key);
+        else if(act === 'delete') confirmDelete(key);
+        else if(act === 'commit') commitEdit();
+        else if(act === 'cancel') cancelEdit();
+      });
+    });
+  });
+}
+
+function startEdit(id){
+  if(state.editingKey || state.addingNew) return;
+  var cat = state.current;
+  var row = state.data[cat].rows.find(function(r){ return r.__id === id; });
+  if(!row) return;
+  state.editingKey = id;
+  state.draft = deepClone(row);
+  refreshTableOnly();
+}
+
+function cancelEdit(){
+  state.editingKey = null;
+  state.draft = null;
+  state.addingNew = false;
+  refreshTableOnly();
+}
+
+function commitEdit(){
+  var cat = state.current;
+  var cols = state.data[cat].columns;
+  var inputs = document.querySelectorAll('tr.editing input[data-field]');
+  var vals = {};
+  inputs.forEach(function(inp){ vals[inp.getAttribute('data-field')] = inp.value; });
+
+  if(state.addingNew){
+    var newRow = { __id: uid() };
+    cols.forEach(function(c){ newRow[c] = vals[c] || ''; });
+    state.data[cat].rows.push(newRow);
+    state.addingNew = false;
+    toast('Baris baru ditambahkan.', 'ok');
+  } else {
+    var row = state.data[cat].rows.find(function(r){ return r.__id === state.editingKey; });
+    if(row){
+      cols.forEach(function(c){ row[c] = vals[c] || ''; });
+      toast('Baris diperbarui.', 'ok');
+    }
+  }
+  state.editingKey = null;
+  state.draft = null;
+  markDirty();
+  refreshTableOnly();
+  renderRailCountsOnly();
+}
+
+var pendingDeleteId = null;
+
+function confirmDelete(id){
+  pendingDeleteId = id;
+  var cat = state.current;
+  var row = state.data[cat].rows.find(function(r){ return r.__id === id; });
+  var label = row ? (row['Asset No.'] || row['No.'] || 'baris ini') : 'baris ini';
+  openModal({
+    title: 'Hapus data aset?',
+    body: '<p style="margin:0;color:var(--ink-soft);font-size:13px;">Data <b class="mono" style="color:var(--ink)">' + escapeHtml(label) + '</b> pada kategori <b>' + escapeHtml(cat) + '</b> akan dihapus permanen dari daftar ini. Tindakan ini tidak bisa dibatalkan setelah disimpan.</p>',
+    okLabel: 'Hapus',
+    okDanger: true,
+    onOk: function(){
+      var idx = state.data[cat].rows.findIndex(function(r){ return r.__id === id; });
+      if(idx > -1) state.data[cat].rows.splice(idx,1);
+      markDirty();
+      closeModal();
+      toast('Baris dihapus.', 'ok');
+      renderAll();
+    }
+  });
+}
+
+function refreshTableOnly(){
+  var c = document.getElementById('content');
+  c.innerHTML = renderTable();
+  bindTableEvents();
+  var firstInput = document.querySelector('tr.editing input[data-field]');
+  if(firstInput) firstInput.focus();
+}
+
+function renderRailCountsOnly(){
+  var rail = document.querySelector('.rail');
+  if(rail) rail.outerHTML = renderRail();
+  bindRailEvents();
+}
+
+function renderAll(){
+  renderTopbar();
+  renderContent();
+  renderRailCountsOnly();
+  bindTopbarEvents();
+}
+
+/* ---------------- global events ---------------- */
+
+function bindRailEvents(){
+  document.querySelectorAll('.rail-item').forEach(function(el){
+    el.addEventListener('click', function(){
+      var cat = el.getAttribute('data-cat');
+      if(state.editingKey || state.addingNew){ cancelEditSilently(); }
+      state.current = cat;
+      state.search = '';
+      renderAll();
+    });
+  });
+  var addCat = document.getElementById('railAddCat');
+  if(addCat) addCat.addEventListener('click', openNewCategoryModal);
+  var btnAccount = document.getElementById('btnAccount');
+  if(btnAccount) btnAccount.addEventListener('click', openAccountModal);
+  var btnLogout = document.getElementById('btnLogout');
+  if(btnLogout) btnLogout.addEventListener('click', logout);
+  var railGithub = document.getElementById('railGithub');
+  if(railGithub) railGithub.addEventListener('click', openGithubModal);
+}
+
+function cancelEditSilently(){
+  state.editingKey = null;
+  state.draft = null;
+  state.addingNew = false;
+}
+
+function bindGlobalEvents(){
+  bindRailEvents();
+  bindTopbarEvents();
+}
+
+function bindTopbarEvents(){
+  var btnSave = document.getElementById('btnSave');
+  if(btnSave) btnSave.addEventListener('click', function(){ persist(false); });
+
+  var btnAddRow = document.getElementById('btnAddRow');
+  if(btnAddRow) btnAddRow.addEventListener('click', function(){
+    if(state.editingKey || state.addingNew) return;
+    var cat = state.current;
+    var cols = state.data[cat].columns;
+    state.addingNew = true;
+    state.editingKey = '__new__';
+    var draft = {};
+    cols.forEach(function(c){ draft[c] = ''; });
+    // auto-increment "No." if present
+    if(cols.indexOf('No.') > -1){
+      var maxNo = 0;
+      state.data[cat].rows.forEach(function(r){
+        var n = parseInt(r['No.'],10);
+        if(!isNaN(n) && n > maxNo) maxNo = n;
+      });
+      draft['No.'] = String(maxNo + 1);
+    }
+    state.draft = draft;
+    state.search = '';
+    var c = document.getElementById('content');
+    c.innerHTML = renderTable();
+    bindTableEvents();
+    var firstInput = document.querySelector('tr.editing input[data-field]');
+    if(firstInput) firstInput.focus();
+  });
+
+  var btnExport = document.getElementById('btnExport');
+  if(btnExport) btnExport.addEventListener('click', function(){ exportCategory(state.current); });
+
+  var btnExportAll = document.getElementById('btnExportAll');
+  if(btnExportAll) btnExportAll.addEventListener('click', exportAll);
+
+  var btnImport = document.getElementById('btnImport');
+  var fileInput = document.getElementById('fileInput');
+  if(btnImport && fileInput){
+    btnImport.addEventListener('click', function(){ fileInput.click(); });
+    fileInput.addEventListener('change', function(e){
+      if(e.target.files && e.target.files[0]) handleImportFile(e.target.files[0]);
+      fileInput.value = '';
+    });
+  }
+}
+
+/* ---------------- export ---------------- */
+
+function exportCategory(cat){
+  if(typeof XLSX === 'undefined'){
+    toast('Pustaka Excel belum siap. Cek koneksi internet lalu muat ulang halaman.', 'err');
+    return;
+  }
+  var cols = state.data[cat].columns;
+  var rows = state.data[cat].rows.map(function(r){
+    var o = {};
+    cols.forEach(function(c){ o[c] = r[c] || ''; });
+    return o;
+  });
+  var ws = XLSX.utils.json_to_sheet(rows, {header: cols});
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, cat.substring(0,31));
+  XLSX.writeFile(wb, 'Asset_' + cat.replace(/[^a-z0-9]+/gi,'_') + '.xlsx');
+  toast('Kategori "' + cat + '" diexport.', 'ok');
+}
+
+function exportAll(){
+  if(typeof XLSX === 'undefined'){
+    toast('Pustaka Excel belum siap. Cek koneksi internet lalu muat ulang halaman.', 'err');
+    return;
+  }
+  var wb = XLSX.utils.book_new();
+  state.order.forEach(function(cat){
+    var cols = state.data[cat].columns;
+    var rows = state.data[cat].rows.map(function(r){
+      var o = {};
+      cols.forEach(function(c){ o[c] = r[c] || ''; });
+      return o;
+    });
+    var ws = XLSX.utils.json_to_sheet(rows, {header: cols});
+    XLSX.utils.book_append_sheet(wb, ws, cat.substring(0,31));
+  });
+  XLSX.writeFile(wb, 'Asset_PT_PMA_Export.xlsx');
+  toast('Seluruh data diexport ke satu file.', 'ok');
+}
+
+/* ---------------- import ---------------- */
+
+function handleImportFile(file){
+  if(typeof XLSX === 'undefined'){
+    toast('Pustaka Excel belum siap. Cek koneksi internet lalu muat ulang halaman.', 'err');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(e.target.result, {type:'array'});
+      var firstSheetName = wb.SheetNames[0];
+      var ws = wb.Sheets[firstSheetName];
+      var json = XLSX.utils.sheet_to_json(ws, {defval:''});
+      if(!json.length){
+        toast('File tidak berisi data yang bisa dibaca.', 'err');
+        return;
+      }
+      var importedCols = Object.keys(json[0]);
+      openImportModal(file.name, wb.SheetNames, importedCols, json, wb);
+    }catch(err){
+      toast('Gagal membaca file. Pastikan format .xlsx/.csv valid.', 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function openImportModal(filename, sheetNames, importedCols, jsonRows, wb){
+  var targetOptions = state.order.map(function(c){ return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+  var mode = 'append';
+
+  var bodyHtml =
+    '<label>File</label>' +
+    '<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;" class="mono">' + escapeHtml(filename) + ' · ' + jsonRows.length + ' baris terbaca</div>' +
+    '<label>Simpan ke kategori</label>' +
+    '<select id="impTarget">' + targetOptions + '<option value="__new__">+ Buat kategori baru dari nama sheet</option></select>' +
+    '<div id="impNewCatWrap" style="display:none;">' +
+      '<label>Nama kategori baru</label>' +
+      '<input type="text" id="impNewCatName" value="' + escapeHtml(sheetNames[0]) + '">' +
+    '</div>' +
+    '<label>Mode import</label>' +
+    '<div class="radio-row">' +
+      '<div class="radio-opt selected" data-mode="append"><div>Tambahkan</div><div>Gabung dengan data yang ada</div></div>' +
+      '<div class="radio-opt" data-mode="replace"><div>Ganti semua</div><div>Timpa data kategori ini</div></div>' +
+    '</div>' +
+    '<div style="font-size:11.5px;color:var(--ink-soft);">Kolom terdeteksi: ' + importedCols.map(function(c){return '<span class="tag-pill">'+escapeHtml(c)+'</span>';}).join('') + '</div>';
+
+  openModal({
+    title: 'Import data aset',
+    bodyRaw: bodyHtml,
+    okLabel: 'Import',
+    onOk: function(){
+      var targetSel = document.getElementById('impTarget');
+      var target = targetSel.value;
+      var modeEl = document.querySelector('.radio-opt.selected');
+      var chosenMode = modeEl ? modeEl.getAttribute('data-mode') : 'append';
+
+      if(target === '__new__'){
+        var newName = document.getElementById('impNewCatName').value.trim() || ('Import ' + Date.now());
+        if(state.data[newName]){ target = newName; }
+        else{
+          state.data[newName] = { columns: importedCols.slice(), rows: [] };
+          state.order.push(newName);
+          target = newName;
+        }
+      }
+
+      var catObj = state.data[target];
+      // merge new columns discovered in the import
+      importedCols.forEach(function(c){
+        if(catObj.columns.indexOf(c) === -1) catObj.columns.push(c);
+      });
+
+      var newRows = jsonRows.map(function(r){
+        var obj = { __id: uid() };
+        catObj.columns.forEach(function(c){ obj[c] = r[c] != null ? r[c] : ''; });
+        return obj;
+      });
+
+      if(chosenMode === 'replace'){
+        catObj.rows = newRows;
+      } else {
+        catObj.rows = catObj.rows.concat(newRows);
+      }
+
+      markDirty();
+      state.current = target;
+      state.search = '';
+      closeModal();
+      toast(newRows.length + ' baris diimport ke "' + target + '".', 'ok');
+      renderAll();
+    }
+  });
+
+  setTimeout(function(){
+    var targetSel = document.getElementById('impTarget');
+    var newCatWrap = document.getElementById('impNewCatWrap');
+    targetSel.addEventListener('change', function(){
+      newCatWrap.style.display = targetSel.value === '__new__' ? 'block' : 'none';
+    });
+    document.querySelectorAll('.radio-opt').forEach(function(opt){
+      opt.addEventListener('click', function(){
+        document.querySelectorAll('.radio-opt').forEach(function(o){ o.classList.remove('selected'); });
+        opt.classList.add('selected');
+      });
+    });
+  }, 0);
+}
+
+/* ---------------- new category modal ---------------- */
+
+function openNewCategoryModal(){
+  var bodyHtml =
+    '<label>Nama kategori</label>' +
+    '<input type="text" id="newCatName" placeholder="mis. Router" >' +
+    '<label>Kolom (pisahkan dengan koma)</label>' +
+    '<textarea id="newCatCols" rows="3" placeholder="No., Asset No., User, Lokasi, Merk, Status"></textarea>';
+
+  openModal({
+    title: 'Buat kategori baru',
+    bodyRaw: bodyHtml,
+    okLabel: 'Buat kategori',
+    onOk: function(){
+      var name = document.getElementById('newCatName').value.trim();
+      var colsRaw = document.getElementById('newCatCols').value.trim();
+      if(!name){ toast('Nama kategori tidak boleh kosong.', 'err'); return; }
+      if(state.data[name]){ toast('Kategori sudah ada.', 'err'); return; }
+      var cols = colsRaw ? colsRaw.split(',').map(function(s){return s.trim();}).filter(Boolean) : ['No.','Asset No.','User','Lokasi','Status'];
+      state.data[name] = { columns: cols, rows: [] };
+      state.order.push(name);
+      state.current = name;
+      markDirty();
+      closeModal();
+      toast('Kategori "' + name + '" dibuat.', 'ok');
+      renderAll();
+    }
+  });
+}
+
+/* ---------------- github settings ---------------- */
+
+function openGithubModal(){
+  var cfg = githubConfig || {};
+  var bodyHtml =
+    '<p style="margin:0 0 14px;font-size:12px;color:var(--ink-soft);">Data akan disimpan sebagai file JSON di repo GitHub kamu sendiri (gratis). Buat <b>repo baru</b> (boleh private), lalu buat <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">Personal Access Token</a> dengan izin <span class="mono">Contents: Read and write</span> khusus untuk repo itu.</p>' +
+    '<label>Username / organisasi GitHub</label>' +
+    '<input type="text" id="ghOwner" placeholder="mis. adinugraha" value="' + escapeHtml(cfg.owner||'') + '">' +
+    '<label>Nama repo</label>' +
+    '<input type="text" id="ghRepo" placeholder="mis. asset-pma-data" value="' + escapeHtml(cfg.repo||'') + '">' +
+    '<label>Branch</label>' +
+    '<input type="text" id="ghBranch" placeholder="main" value="' + escapeHtml(cfg.branch||'main') + '">' +
+    '<label>Personal Access Token <span style="font-weight:400;color:var(--ink-soft);">(kosongkan jika hanya ingin membaca)</span></label>' +
+    '<input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off" value="' + escapeHtml(cfg.token||'') + '">' +
+    '<div style="font-size:11px;color:var(--ink-soft);margin:-6px 0 14px;">Token hanya disimpan di browser perangkat ini (localStorage), tidak pernah dikirim ke Claude atau siapa pun selain langsung ke GitHub. Perlakukan seperti password.</div>' +
+    '<div id="ghError" class="login-error" style="display:none;background:#FBEBE8;border-color:#E3A79A;color:#8C2E22;"></div>';
+
+  openModal({
+    title: 'Sambungan GitHub',
+    bodyRaw: bodyHtml,
+    okLabel: 'Simpan & sambungkan',
+    extraFoot: hasGithubConfig() ? '<button class="btn btn-ghost btn-danger-text" id="ghDisconnect" style="margin-right:auto;">Putuskan sambungan</button>' : '',
+    onOk: function(){
+      var owner = document.getElementById('ghOwner').value.trim();
+      var repo = document.getElementById('ghRepo').value.trim();
+      var branch = document.getElementById('ghBranch').value.trim() || 'main';
+      var token = document.getElementById('ghToken').value.trim();
+      var errEl = document.getElementById('ghError');
+      if(!owner || !repo){
+        errEl.textContent = 'Username dan nama repo wajib diisi.';
+        errEl.style.display = 'block';
+        return;
+      }
+      var newCfg = {owner:owner, repo:repo, branch:branch, token:token, dataPath:'asset-data.json', authPath:'auth.json'};
+      saveGithubConfig(newCfg);
+      closeModal();
+      toast('Tersambung ke ' + owner + '/' + repo + '. Memuat data…', 'ok');
+      cancelEditSilently();
+      try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+      showLoginScreen();
+    }
+  });
+
+  setTimeout(function(){
+    var disc = document.getElementById('ghDisconnect');
+    if(disc) disc.addEventListener('click', function(){
+      clearGithubConfig();
+      closeModal();
+      toast('Sambungan GitHub diputus. Kembali ke penyimpanan lokal/Claude.', 'ok');
+      cancelEditSilently();
+      try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+      showLoginScreen();
+    });
+  }, 0);
+}
+
+/* ---------------- account / password ---------------- */
+
+function openAccountModal(){
+  var bodyHtml =
+    '<label>Password saat ini</label>' +
+    '<input type="password" id="accCurPass" autocomplete="current-password">' +
+    '<label>Username baru (opsional)</label>' +
+    '<input type="text" id="accNewUser" placeholder="' + escapeHtml(state.authUser) + '">' +
+    '<label>Password baru</label>' +
+    '<input type="password" id="accNewPass" placeholder="Kosongkan jika tidak diubah" autocomplete="new-password">' +
+    '<div id="accError" class="login-error" style="display:none;background:#FBEBE8;border-color:#E3A79A;color:#8C2E22;"></div>';
+
+  openModal({
+    title: 'Akun & keamanan',
+    bodyRaw: bodyHtml,
+    okLabel: 'Simpan perubahan',
+    onOk: function(){
+      var curPass = document.getElementById('accCurPass').value;
+      var newUser = document.getElementById('accNewUser').value.trim();
+      var newPass = document.getElementById('accNewPass').value;
+      var errEl = document.getElementById('accError');
+
+      hashText(curPass).then(function(curHash){
+        if(curHash !== state.authHash){
+          errEl.textContent = 'Password saat ini salah.';
+          errEl.style.display = 'block';
+          return;
+        }
+        var finalUser = newUser || state.authUser;
+        var finalPassPromise = newPass ? hashText(newPass) : Promise.resolve(state.authHash);
+        finalPassPromise.then(function(finalHash){
+          state.authUser = finalUser;
+          state.authHash = finalHash;
+          return storageSet(AUTH_KEY, JSON.stringify({user: finalUser, hash: finalHash}), true);
+        }).then(function(){
+          closeModal();
+          toast('Akun diperbarui.', 'ok');
+          renderRailCountsOnly();
+        });
+      });
+    }
+  });
+}
+
+function logout(){
+  try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+  showLoginScreen();
+}
+
+/* ---------------- generic modal ---------------- */
+
+function openModal(cfg){
+  closeModal();
+  var overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'activeOverlay';
+  overlay.innerHTML =
+    '<div class="modal">' +
+      '<div class="modal-head"><h3>' + escapeHtml(cfg.title) + '</h3></div>' +
+      '<div class="modal-body">' + (cfg.bodyRaw || cfg.body || '') + '</div>' +
+      '<div class="modal-foot">' +
+        (cfg.extraFoot || '') +
+        '<button class="btn" id="modalCancel">Batal</button>' +
+        '<button class="btn ' + (cfg.okDanger ? '' : 'btn-primary') + '" id="modalOk" style="' + (cfg.okDanger ? 'background:var(--rust);border-color:var(--rust);color:#fff;' : '') + '">' + escapeHtml(cfg.okLabel || 'OK') + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e){ if(e.target === overlay) closeModal(); });
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('modalOk').addEventListener('click', cfg.onOk);
+}
+
+function closeModal(){
+  var el = document.getElementById('activeOverlay');
+  if(el) el.remove();
+}
+
+/* ---------------- warn before unload ---------------- */
+
+window.addEventListener('beforeunload', function(e){
+  if(state.dirty){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+/* ---------------- login screen ---------------- */
+
+function showLoginScreen(){
+  root.innerHTML =
+    '<div class="login-screen">' +
+      '<div class="login-card">' +
+        '<img class="login-logo" src="' + LOGO_URI + '" alt="Logo PMA Asset">' +
+        '<span class="login-tag">IT · INVENTORY</span>' +
+        '<h1 class="login-title">Sistem Asset PMA</h1>' +
+        '<p class="login-sub">by Adi Nugraha — masuk untuk mengelola data aset</p>' +
+        '<div class="login-error" id="loginError">Username atau password salah.</div>' +
+        '<form id="loginForm">' +
+          '<div class="login-field">' +
+            '<label>Username</label>' +
+            '<input type="text" id="loginUser" autocomplete="username" autofocus>' +
+          '</div>' +
+          '<div class="login-field">' +
+            '<label>Password</label>' +
+            '<input type="password" id="loginPass" autocomplete="current-password">' +
+          '</div>' +
+          '<button type="submit" class="login-btn">Masuk</button>' +
+        '</form>' +
+        '<div class="login-hint" id="loginHint"></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="app-credit"></div>';
+
+  storageGet(AUTH_KEY, true).then(function(res){
+    var hint = document.getElementById('loginHint');
+    var shareLine = hasGithubConfig()
+      ? ('Data & akun ini tersimpan di GitHub repo <span class="mono">' + escapeHtml(githubConfig.owner + '/' + githubConfig.repo) + '</span> — semua yang membuka halaman ini melihat & mengubah data yang sama.')
+      : 'Data & akun ini <b>dibagikan</b> ke semua orang yang membuka tampilan ini di Claude — semua melihat & mengubah data yang sama.';
+    if(res && res.value){
+      try{
+        var parsed = JSON.parse(res.value);
+        state.authUser = parsed.user || DEFAULT_USER;
+        state.authHash = parsed.hash;
+      }catch(e){ /* keep defaults, will be re-created below */ }
+    }
+    if(!state.authHash){
+      // first run: create the default shared account
+      hashText(DEFAULT_PASS).then(function(h){
+        state.authUser = DEFAULT_USER;
+        state.authHash = h;
+        storageSet(AUTH_KEY, JSON.stringify({user: DEFAULT_USER, hash: h}), true);
+        if(hint) hint.innerHTML = 'Pertama kali? Masuk dengan <span class="mono">' + DEFAULT_USER + '</span> / <span class="mono">' + DEFAULT_PASS + '</span>, lalu ubah password lewat ikon gerigi di sidebar.<br><br>' + shareLine;
+      });
+    } else if(hint){
+      hint.innerHTML = shareLine;
+    }
+  });
+
+  var form = document.getElementById('loginForm');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var u = document.getElementById('loginUser').value.trim();
+    var p = document.getElementById('loginPass').value;
+    var errEl = document.getElementById('loginError');
+    hashText(p).then(function(h){
+      if(u === state.authUser && h === state.authHash){
+        try{ sessionStorage.setItem(SESSION_KEY, '1'); }catch(e){}
+        bootApp();
+      } else {
+        errEl.classList.add('show');
+      }
+    });
+  });
+}
+
+function isSessionActive(){
+  try{ return sessionStorage.getItem(SESSION_KEY) === '1'; }catch(e){ return false; }
+}
+
+/* ---------------- boot ---------------- */
+
+function bootApp(){
+  render(); // immediate loading state
+  loadData();
+}
+
+// Never leave the page blank: show a real error state instead of silently failing.
+window.addEventListener('error', function(ev){
+  if(state.loaded) return;
+  root.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:24px;">' +
+      '<div style="max-width:420px;text-align:center;font-family:IBM Plex Sans,sans-serif;">' +
+        '<h2 style="font-family:Space Grotesk,sans-serif;margin:0 0 8px;">Gagal memuat aplikasi</h2>' +
+        '<p style="color:#565F58;font-size:13px;margin:0 0 4px;">Terjadi error saat menyiapkan data. Coba muat ulang halaman ini.</p>' +
+        '<p style="color:#9AA096;font-size:11px;font-family:IBM Plex Mono,monospace;">' + escapeHtml(ev.message || 'unknown error') + '</p>' +
+      '</div>' +
+    '</div>';
+});
+
+try{
+  loadGithubConfig();
+  if(isSessionActive()){
+    bootApp();
+  } else {
+    showLoginScreen();
+  }
+}catch(e){
+  root.innerHTML = '<div style="padding:40px;font-family:IBM Plex Mono,monospace;font-size:12px;color:#B23A2E;">Gagal memuat aplikasi: ' + escapeHtml(e.message) + '</div>';
+}
+
+})();
+
+</script>
+<script>
+  // Register the PWA service worker only when served over http(s) (e.g. GitHub
+  // Pages). This is skipped harmlessly inside the Claude preview / local files.
+  if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){ /* offline shell just won't be available */ });
+    });
+  }
+</script>
+</body>
+</html>
