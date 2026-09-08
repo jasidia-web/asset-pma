@@ -15,6 +15,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <style>
   :root{
     --bg: #EEF0EA;
@@ -846,12 +849,117 @@ function githubWriteFile(path, contentStr){
   });
 }
 
+/* ---------------- firebase backend ---------------- */
+
+var FB_CONFIG_KEY = "pma-firebase-config-v1";
+var firebaseConfig = null; // parsed object from the Firebase console config snippet
+var firebaseReady = false;
+
+function loadFirebaseConfig(){
+  try{
+    var raw = localStorage.getItem(FB_CONFIG_KEY);
+    firebaseConfig = raw ? JSON.parse(raw) : null;
+  }catch(e){ firebaseConfig = null; }
+}
+
+function saveFirebaseConfig(cfg){
+  firebaseConfig = cfg;
+  firebaseReady = false;
+  try{ localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg)); }catch(e){}
+}
+
+function clearFirebaseConfig(){
+  firebaseConfig = null;
+  firebaseReady = false;
+  try{ localStorage.removeItem(FB_CONFIG_KEY); }catch(e){}
+}
+
+function hasFirebaseConfig(){
+  return !!(firebaseConfig && firebaseConfig.databaseURL);
+}
+
+function parseFirebaseConfigSnippet(text){
+  // Prefer the specific "firebaseConfig = {...}" block so extra lines like
+  // `import { initializeApp } from "firebase/app";` (which also contain
+  // braces) don't get swept into the match.
+  var named = text.match(/firebaseConfig\s*=\s*(\{[\s\S]*?\})\s*;/);
+  var objStr = named ? named[1] : null;
+
+  if(!objStr){
+    var generic = text.match(/\{[\s\S]*\}/);
+    objStr = generic ? generic[0] : null;
+  }
+  if(!objStr){
+    throw new Error('Tidak menemukan kode konfigurasi. Tempel seluruh blok firebaseConfig dari Firebase Console.');
+  }
+  var obj;
+  try{
+    obj = new Function('return (' + objStr + ')')();
+  }catch(e){
+    throw new Error('Format konfigurasi tidak terbaca. Pastikan menempel apa adanya dari Firebase Console.');
+  }
+  if(!obj || !obj.databaseURL){
+    throw new Error('"databaseURL" tidak ditemukan — pastikan sudah membuat Realtime Database di Firebase Console.');
+  }
+  return obj;
+}
+
+function initFirebaseIfNeeded(){
+  if(!hasFirebaseConfig() || typeof firebase === 'undefined') return false;
+  try{
+    if(!firebase.apps || !firebase.apps.length){
+      firebase.initializeApp(firebaseConfig);
+    }
+    firebaseReady = true;
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function ensureFirebaseAuth(){
+  if(typeof firebase === 'undefined' || !firebase.auth) return Promise.resolve();
+  if(firebase.auth().currentUser) return Promise.resolve();
+  return firebase.auth().signInAnonymously().catch(function(){
+    throw new Error('Login anonim gagal — aktifkan dulu di Firebase Console: Authentication > Sign-in method > Anonymous.');
+  });
+}
+
+function fbPathFor(key){
+  if(key === STORAGE_KEY) return 'assetData';
+  if(key === AUTH_KEY) return 'auth';
+  return key;
+}
+
+function firebaseGetPath(path){
+  return ensureFirebaseAuth().then(function(){
+    return firebase.database().ref(path).once('value');
+  }).then(function(snap){
+    return snap.exists() ? snap.val() : null;
+  });
+}
+
+function firebaseSetPath(path, value){
+  return ensureFirebaseAuth().then(function(){
+    return firebase.database().ref(path).set(value);
+  });
+}
+
 function hasCloudStorage(){
   return typeof window !== 'undefined' && window.storage &&
     typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
 }
 
 function storageGet(key, shared){
+  if(hasFirebaseConfig() && initFirebaseIfNeeded()){
+    var fPath = fbPathFor(key);
+    return firebaseGetPath(fPath).then(function(val){
+      return val != null ? {key:key, value: JSON.stringify(val)} : null;
+    }).catch(function(err){
+      toast('Gagal ambil data dari Firebase: ' + err.message, 'err');
+      return null;
+    });
+  }
   if(hasGithubConfig()){
     var path = ghPathFor(key);
     return githubFetchFile(path).then(function(content){
@@ -874,6 +982,17 @@ function storageGet(key, shared){
 }
 
 function storageSet(key, value, shared){
+  if(hasFirebaseConfig() && initFirebaseIfNeeded()){
+    var fPath = fbPathFor(key);
+    var obj;
+    try{ obj = JSON.parse(value); }catch(e){ obj = value; }
+    return firebaseSetPath(fPath, obj).then(function(){
+      return {key:key, value:value};
+    }).catch(function(err){
+      toast('Gagal simpan ke Firebase: ' + err.message, 'err');
+      return null;
+    });
+  }
   if(hasGithubConfig()){
     var path = ghPathFor(key);
     return githubWriteFile(path, value).then(function(){
@@ -1066,6 +1185,10 @@ function renderRail(){
     ? ('<span class="gh-dot on"></span>' + escapeHtml(githubConfig.owner + '/' + githubConfig.repo))
     : ('<span class="gh-dot off"></span>Belum tersambung');
 
+  var fbStatus = hasFirebaseConfig()
+    ? ('<span class="gh-dot on"></span>' + escapeHtml(firebaseConfig.projectId || 'Tersambung'))
+    : ('<span class="gh-dot off"></span>Belum tersambung');
+
   return '<div class="rail">' +
     '<div class="rail-head">' +
       '<button class="rail-close-btn" id="railCloseBtn" aria-label="Tutup menu">' + icon('x') + '</button>' +
@@ -1085,6 +1208,10 @@ function renderRail(){
         '<span>Kategori baru</span>' +
       '</div>' +
       '<div class="rail-group-label">PENYIMPANAN</div>' +
+      '<div class="rail-item" id="railFirebase">' +
+        '<span class="ri-name">' + fbStatus + '</span>' +
+        '<span class="ri-count">' + icon('firebase') + '</span>' +
+      '</div>' +
       '<div class="rail-item" id="railGithub">' +
         '<span class="ri-name">' + ghStatus + '</span>' +
         '<span class="ri-count">' + icon('github') + '</span>' +
@@ -1107,7 +1234,8 @@ function renderTopbarSaveState(){
   var el = document.getElementById('saveState');
   var btn = document.getElementById('btnSave');
   if(!el || !btn) return;
-  var where = hasGithubConfig() ? ' (GitHub: ' + escapeHtml(githubConfig.owner + '/' + githubConfig.repo) + ')'
+  var where = hasFirebaseConfig() ? ' (Firebase: ' + escapeHtml(firebaseConfig.projectId || '') + ')'
+    : hasGithubConfig() ? ' (GitHub: ' + escapeHtml(githubConfig.owner + '/' + githubConfig.repo) + ')'
     : usingCloudStorage ? ' (dibagikan ke tim)' : ' (di browser ini saja)';
   if(state.dirty){
     el.innerHTML = '<span class="unsaved-dot"></span> Ada perubahan belum disimpan';
@@ -1177,7 +1305,8 @@ function icon(name){
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
     github: '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.1-.5 2V21"/>',
-    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>'
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    firebase: '<path d="M6 3l3 12 3-6 6 9H4z"/><path d="M9 15l3-12 2 4"/>'
   };
   return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name]||'') + '</svg>';
 }
@@ -1503,6 +1632,8 @@ function bindRailEvents(){
   if(btnLogout) btnLogout.addEventListener('click', function(){ closeMobileNav(); logout(); });
   var railGithub = document.getElementById('railGithub');
   if(railGithub) railGithub.addEventListener('click', function(){ closeMobileNav(); openGithubModal(); });
+  var railFirebase = document.getElementById('railFirebase');
+  if(railFirebase) railFirebase.addEventListener('click', function(){ closeMobileNav(); openFirebaseModal(); });
   var railCloseBtn = document.getElementById('railCloseBtn');
   if(railCloseBtn) railCloseBtn.addEventListener('click', closeMobileNav);
 }
@@ -1745,6 +1876,58 @@ function openNewCategoryModal(){
   });
 }
 
+/* ---------------- firebase settings ---------------- */
+
+function openFirebaseModal(){
+  var existingSnippet = firebaseConfig ? JSON.stringify(firebaseConfig, null, 2) : '';
+  var bodyHtml =
+    '<p style="margin:0 0 14px;font-size:12px;color:var(--ink-soft);">Buka Firebase Console \u2192 project kamu \u2192 Project settings \u2192 scroll ke \"Your apps\" \u2192 salin seluruh kode <span class="mono">const firebaseConfig = {...}</span> lalu tempel di bawah ini apa adanya.</p>' +
+    '<label>Kode firebaseConfig</label>' +
+    '<textarea id="fbSnippet" rows="8" placeholder="const firebaseConfig = {\n  apiKey: &quot;...&quot;,\n  authDomain: &quot;...&quot;,\n  databaseURL: &quot;https://xxx-default-rtdb.firebaseio.com&quot;,\n  projectId: &quot;...&quot;,\n  ...\n};" style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;">' + escapeHtml(existingSnippet) + '</textarea>' +
+    '<div style="font-size:11px;color:var(--ink-soft);margin:-6px 0 14px;">Pastikan sudah membuat <b>Realtime Database</b> (bukan cuma Firestore) dan mengaktifkan <b>Authentication \u2192 Anonymous</b> di Firebase Console kamu.</div>' +
+    '<div id="fbError" class="login-error" style="display:none;background:#FBEBE8;border-color:#E3A79A;color:#8C2E22;"></div>';
+
+  openModal({
+    title: 'Sambungan Firebase',
+    bodyRaw: bodyHtml,
+    okLabel: 'Simpan & sambungkan',
+    extraFoot: hasFirebaseConfig() ? '<button class="btn btn-ghost btn-danger-text" id="fbDisconnect" style="margin-right:auto;">Putuskan sambungan</button>' : '',
+    onOk: function(){
+      var errEl = document.getElementById('fbError');
+      var raw = document.getElementById('fbSnippet').value.trim();
+      if(!raw){
+        errEl.textContent = 'Tempel dulu kode konfigurasinya.';
+        errEl.style.display = 'block';
+        return;
+      }
+      try{
+        var cfg = parseFirebaseConfigSnippet(raw);
+        saveFirebaseConfig(cfg);
+        closeModal();
+        toast('Tersambung ke Firebase. Memuat data…', 'ok');
+        cancelEditSilently();
+        try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+        showLoginScreen();
+      }catch(err){
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      }
+    }
+  });
+
+  setTimeout(function(){
+    var disc = document.getElementById('fbDisconnect');
+    if(disc) disc.addEventListener('click', function(){
+      clearFirebaseConfig();
+      closeModal();
+      toast('Sambungan Firebase diputus.', 'ok');
+      cancelEditSilently();
+      try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+      showLoginScreen();
+    });
+  }, 0);
+}
+
 /* ---------------- github settings ---------------- */
 
 function openGithubModal(){
@@ -1916,7 +2099,9 @@ function showLoginScreen(){
 
   storageGet(AUTH_KEY, true).then(function(res){
     var hint = document.getElementById('loginHint');
-    var shareLine = hasGithubConfig()
+    var shareLine = hasFirebaseConfig()
+      ? ('Data & akun ini tersimpan di Firebase project <span class="mono">' + escapeHtml(firebaseConfig.projectId || '') + '</span> — sinkron otomatis di semua perangkat yang login.')
+      : hasGithubConfig()
       ? ('Data & akun ini tersimpan di GitHub repo <span class="mono">' + escapeHtml(githubConfig.owner + '/' + githubConfig.repo) + '</span> — semua yang membuka halaman ini melihat & mengubah data yang sama.')
       : 'Data & akun ini <b>dibagikan</b> ke semua orang yang membuka tampilan ini di Claude — semua melihat & mengubah data yang sama.';
     if(res && res.value){
@@ -1981,6 +2166,7 @@ window.addEventListener('error', function(ev){
 });
 
 try{
+  loadFirebaseConfig();
   loadGithubConfig();
   if(isSessionActive()){
     bootApp();
