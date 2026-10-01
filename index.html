@@ -809,7 +809,8 @@ function b64DecodeUnicode(str){ return decodeURIComponent(escape(atob(str.replac
 function githubFetchFile(path){
   var headers = {'Accept':'application/vnd.github+json'};
   if(githubConfig.token) headers['Authorization'] = 'Bearer ' + githubConfig.token;
-  return fetch(ghApiUrl(path), {headers: headers}).then(function(res){
+  var bust = (ghApiUrl(path).indexOf('?') > -1 ? '&' : '?') + '_=' + Date.now();
+  return fetch(ghApiUrl(path) + bust, {headers: headers, cache:'no-store'}).then(function(res){
     if(res.status === 404) return null;
     if(!res.ok){
       return res.json().catch(function(){ return {}; }).then(function(e){
@@ -843,16 +844,19 @@ function githubWriteFile(path, contentStr){
   var url = 'https://api.github.com/repos/' + encodeURIComponent(githubConfig.owner) + '/' +
     encodeURIComponent(githubConfig.repo) + '/contents/' + path;
 
-  return fetch(url, {method:'PUT', headers: headers, body: JSON.stringify(body)}).then(function(res){
-    if(res.status === 409){
-      // someone else saved in between — refetch sha once and retry
-      return githubFetchFile(path).then(function(){
-        body.sha = ghShaCache[path];
-        return fetch(url, {method:'PUT', headers: headers, body: JSON.stringify(body)});
-      });
-    }
-    return res;
-  }).then(function(res){
+  function put(attempt){
+    return fetch(url, {method:'PUT', headers: headers, body: JSON.stringify(body), cache:'no-store'}).then(function(res){
+      if((res.status === 409 || res.status === 422) && attempt < 3){
+        // sha usang (ada simpanan lain di antaranya) — ambil sha terbaru lalu coba lagi
+        return githubFetchFile(path).then(function(){
+          if(ghShaCache[path]) body.sha = ghShaCache[path]; else delete body.sha;
+          return put(attempt + 1);
+        });
+      }
+      return res;
+    });
+  }
+  return put(0).then(function(res){
     if(!res.ok){
       return res.json().catch(function(){ return {}; }).then(function(e){
         throw new Error(e.message || ('GitHub error ' + res.status));
