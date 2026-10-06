@@ -4,7 +4,7 @@
 //
 // IMPORTANT: bump CACHE_NAME every time you deploy a new index.html, otherwise
 // browsers won't notice sw.js changed and will keep serving the old cached shell.
-var CACHE_NAME = 'asset-pma-shell-v4';
+var CACHE_NAME = 'asset-pma-shell-v6';
 var SHELL_FILES = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function(event){
